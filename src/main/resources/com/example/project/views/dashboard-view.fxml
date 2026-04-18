@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.project.controllers.DashboardController"
+            styleClass="main-layout">
+    
+    <!-- LEFT SIDEBAR NAVIGATION -->
+    <left>
+        <VBox styleClass="sidebar" prefWidth="220">
+            <padding>
+                <Insets top="30" right="20" bottom="30" left="20"/>
+            </padding>
+            <Label text="Darkroom Atelier" styleClass="logo-text">
+                <VBox.margin>
+                    <Insets bottom="40"/>
+                </VBox.margin>
+            </Label>
+            
+            <Label text="LIBRARY" styleClass="section-label"/>
+            <Label text="Creative Suite" styleClass="section-title">
+                 <VBox.margin>
+                    <Insets bottom="20"/>
+                </VBox.margin>
+            </Label>
+            
+            <VBox spacing="8">
+                <Button text="REPOSITORY" styleClass="nav-button, nav-button-active" alignment="BASELINE_LEFT" maxWidth="Infinity"/>
+                <Button text="PROCESSING" styleClass="nav-button" alignment="BASELINE_LEFT" maxWidth="Infinity"/>
+                <Button text="MOSAIC" styleClass="nav-button" alignment="BASELINE_LEFT" maxWidth="Infinity"/>
+                <Button text="VIDEO" styleClass="nav-button" alignment="BASELINE_LEFT" maxWidth="Infinity"/>
+                <Button text="SOCIAL" styleClass="nav-button" alignment="BASELINE_LEFT" maxWidth="Infinity"/>
+            </VBox>
+            
+            <Region VBox.vgrow="ALWAYS" /> <!-- Auto expansion spacer -->
+            
+            <VBox spacing="8">
+                <Button text="STORAGE" styleClass="nav-button-secondary" alignment="BASELINE_LEFT" maxWidth="Infinity"/>
+                <Button text="TRASH" styleClass="nav-button-secondary" alignment="BASELINE_LEFT" maxWidth="Infinity"/>
+            </VBox>
+        </VBox>
+    </left>
+    
+    <!-- CENTER CONTENT -->
+    <center>
+        <BorderPane>
+            <!-- TOP NAVBAR -->
+            <top>
+                <HBox styleClass="top-bar" alignment="CENTER_LEFT" fx:id="topBar">
+                    <padding>
+                        <Insets top="12" right="20" bottom="12" left="20"/>
+                    </padding>
+                    
+                    <!-- Search Bar Container (Dynamic width = Library Width) -->
+                    <HBox alignment="CENTER" HBox.hgrow="ALWAYS">
+                        <TextField promptText="Search repository..." styleClass="search-field" prefWidth="400"/>
+                    </HBox>
+                    
+                    <!-- Top Right Actions Container (Dynamically bound) -->
+                    <HBox alignment="CENTER_RIGHT" spacing="15" fx:id="topRightActions" minWidth="0">
+                        <Label text="⚙" styleClass="icon-label"/>
+                        <Button text="Generate" styleClass="btn-primary"/>
+                    </HBox>
+                </HBox>
+            </top>
+            
+            <center>
+                <BorderPane styleClass="main-split" fx:id="mainSplitContainer">
+                    <!-- GRID AREA -->
+                    <center>
+                        <BorderPane styleClass="grid-container">
+                        <padding>
+                            <Insets top="20" right="30" bottom="30" left="30"/>
+                        </padding>
+                        
+                        <!-- Grid Header -->
+                        <top>
+                            <VBox spacing="5">
+                                <BorderPane.margin>
+                                    <Insets bottom="20"/>
+                                </BorderPane.margin>
+                                <HBox alignment="CENTER_LEFT">
+                                    <Label text="Raw Captures" styleClass="headline-text"/>
+                                </HBox>
+                                <HBox alignment="CENTER_LEFT" spacing="10">
+                                    <Label fx:id="imageCountLabel" text="Showing 0 items from recent import" styleClass="subtitle-text"/>
+                                    <Region HBox.hgrow="ALWAYS" />
+                                    <Button text="≡ Filter" styleClass="btn-filter"/>
+                                    <Button text="≡ Date Added" styleClass="btn-filter"/>
+                                </HBox>
+                            </VBox>
+                        </top>
+                        
+                        <!-- Scrollable Grid -->
+                        <center>
+                            <ScrollPane fx:id="gridScrollPane" fitToWidth="true" styleClass="grid-scroll" hbarPolicy="NEVER">
+                                <GridPane fx:id="imageGrid" hgap="20" vgap="20" alignment="TOP_LEFT"/>
+                            </ScrollPane>
+                        </center>
+                    </BorderPane>
+                    </center>
+                    
+                    <!-- RIGHT PROPERTIES PANEL -->
+                    <right>
+                    <ScrollPane fitToWidth="true" styleClass="properties-panel-scroll" fx:id="metadataSidebar" hbarPolicy="NEVER" minWidth="0">
+                        <VBox styleClass="properties-panel" spacing="25">
+                            <padding>
+                                <Insets top="20" right="20" bottom="30" left="20"/>
+                            </padding>
+                            
+                            <!-- Large Image Preview -->
+                            <VBox alignment="CENTER">
+                                <ImageView fx:id="selectedImagePreview" fitWidth="300" preserveRatio="true" styleClass="preview-image"/>
+                            </VBox>
+                            
+                            <!-- FILE DETAILS SECTION -->
+                            <VBox spacing="10">
+                                <Label text="FILE DETAILS" styleClass="section-label-blue"/>
+                                <GridPane hgap="10" vgap="8">
+                                    <Label text="Name" GridPane.columnIndex="0" GridPane.rowIndex="0" styleClass="prop-label"/>
+                                    <Label text="DSC_0492.NEF" GridPane.columnIndex="1" GridPane.rowIndex="0" styleClass="prop-value" GridPane.halignment="RIGHT"/>
+                                    
+                                    <Label text="Format" GridPane.columnIndex="0" GridPane.rowIndex="1" styleClass="prop-label"/>
+                                    <Label text="RAW (14-bit)" GridPane.columnIndex="1" GridPane.rowIndex="1" styleClass="prop-value" GridPane.halignment="RIGHT"/>
+                                    
+                                    <Label text="Size" GridPane.columnIndex="0" GridPane.rowIndex="2" styleClass="prop-label"/>
+                                    <Label text="42.8 MB" GridPane.columnIndex="1" GridPane.rowIndex="2" styleClass="prop-value" GridPane.halignment="RIGHT"/>
+                                    
+                                    <Label text="Dimensions" GridPane.columnIndex="0" GridPane.rowIndex="3" styleClass="prop-label"/>
+                                    <Label text="8256 × 5504" GridPane.columnIndex="1" GridPane.rowIndex="3" styleClass="prop-value" GridPane.halignment="RIGHT"/>
+
+                                    <columnConstraints>
+                                        <ColumnConstraints hgrow="SOMETIMES" minWidth="10" />
+                                        <ColumnConstraints hgrow="ALWAYS" minWidth="10" halignment="RIGHT"/>
+                                    </columnConstraints>
+                                </GridPane>
+                            </VBox>
+                            
+                            <!-- CAMERA DATA SECTION -->
+                            <VBox spacing="10">
+                                <Label text="CAMERA DATA" styleClass="section-label-blue"/>
+                                <GridPane styleClass="data-grid" hgap="10" vgap="10">
+                                    <!-- row 0 -->
+                                    <VBox styleClass="data-cell" GridPane.columnIndex="0" GridPane.rowIndex="0">
+                                        <Label text="ISO" styleClass="data-label"/>
+                                        <Label text="100" styleClass="data-value"/>
+                                    </VBox>
+                                    <VBox styleClass="data-cell" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                                        <Label text="APERTURE" styleClass="data-label"/>
+                                        <Label text="f/8.0" styleClass="data-value"/>
+                                    </VBox>
+                                    <!-- row 1 -->
+                                    <VBox styleClass="data-cell" GridPane.columnIndex="0" GridPane.rowIndex="1">
+                                        <Label text="SHUTTER" styleClass="data-label"/>
+                                        <Label text="1/250s" styleClass="data-value"/>
+                                    </VBox>
+                                    <VBox styleClass="data-cell" GridPane.columnIndex="1" GridPane.rowIndex="1">
+                                        <Label text="FOCAL LENGTH" styleClass="data-label"/>
+                                        <Label text="35mm" styleClass="data-value"/>
+                                    </VBox>
+                                    <!-- row 2 full width -->
+                                    <HBox styleClass="data-cell" GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.rowIndex="2">
+                                        <Label text="LENS" styleClass="data-label"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label text="Nikkor Z 35mm f/1.8 S" styleClass="data-value"/>
+                                    </HBox>
+                                    
+                                    <columnConstraints>
+                                        <ColumnConstraints hgrow="ALWAYS" percentWidth="50" minWidth="10" />
+                                        <ColumnConstraints hgrow="ALWAYS" percentWidth="50" minWidth="10" />
+                                    </columnConstraints>
+                                </GridPane>
+                            </VBox>
+                            
+                            <!-- CONTENT TAGS -->
+                            <VBox spacing="10">
+                                <HBox>
+                                    <Label text="CONTENT TAGS" styleClass="section-label-blue"/>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <Label text="+" styleClass="icon-label"/>
+                                </HBox>
+                                <FlowPane hgap="8" vgap="8">
+                                    <Label text="Landscape" styleClass="tag"/>
+                                    <Label text="Moody" styleClass="tag"/>
+                                    <Label text="Mountains" styleClass="tag"/>
+                                    <Label text="✨ Atmospheric" styleClass="tag-tertiary"/>
+                                </FlowPane>
+                            </VBox>
+                            
+                            <!-- ANNOTATIONS -->
+                            <VBox spacing="10">
+                                <HBox>
+                                    <Label text="♥ ANNOTATIONS" styleClass="section-label-tertiary"/>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <Label text="SAVED" styleClass="subtitle-text" style="-fx-font-size: 10px;"/>
+                                </HBox>
+                                <TextArea promptText="Add editorial notes, client feedback, or processing intent here..." 
+                                          styleClass="annotation-area" wrapText="true" prefRowCount="4"/>
+                                          
+                                <HBox spacing="10" alignment="CENTER_RIGHT">
+                                    <Button text="Copy Notes" styleClass="btn-secondary"/>
+                                    <Button text="Sync Metadata" styleClass="btn-tertiary-outline"/>
+                                </HBox>
+                            </VBox>
+                            
+                        </VBox>
+                    </ScrollPane>
+                    </right>
+                </BorderPane>
+            </center>
+        </BorderPane>
+    </center>
+</BorderPane>
