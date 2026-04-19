@@ -98,7 +98,13 @@
                         <!-- Scrollable Grid -->
                         <center>
                             <ScrollPane fx:id="gridScrollPane" fitToWidth="true" styleClass="grid-scroll" hbarPolicy="NEVER">
-                                <GridPane fx:id="imageGrid" hgap="20" vgap="20" alignment="TOP_LEFT"/>
+                                <content>
+                                    <GridPane fx:id="imageGrid" hgap="20" vgap="20" alignment="TOP_LEFT">
+                                        <padding>
+                                            <Insets right="20" bottom="20"/>
+                                        </padding>
+                                    </GridPane>
+                                </content>
                             </ScrollPane>
                         </center>
                     </BorderPane>

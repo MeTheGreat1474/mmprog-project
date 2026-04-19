@@ -232,6 +232,13 @@
     -fx-background-color: #1A1A1A;
     -fx-background-radius: 8;
     -fx-cursor: hand;
+    -fx-border-color: transparent;
+    -fx-border-width: 3;
+    -fx-border-radius: 8;
+}
+
+.image-cell:hover, .image-cell:focused {
+    -fx-border-color: #546E7A;
 }
 
 /* Upload Prompt Cell */
@@ -245,10 +252,10 @@
     -fx-padding: 20;
 }
 
-.upload-cell:hover {
+.upload-cell:hover, .upload-cell:focused {
     -fx-border-color: -color-primary;
     -fx-background-color: rgba(0, 176, 255, 0.05);
-    /* Slight blue tint on hover */
+    /* Slight blue tint on hover/focus */
 }
 
 .upload-icon {
@@ -267,7 +274,7 @@
     /* Hack for rounded corners on images in JavaFX: need a clip or we just round the container */
 }
 
-.selected {
+.image-cell.selected {
     -fx-border-color: -color-primary;
     -fx-border-width: 3;
     -fx-border-radius: 8;

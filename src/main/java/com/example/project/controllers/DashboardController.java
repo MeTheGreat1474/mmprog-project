@@ -140,7 +140,7 @@ public class DashboardController implements Initializable {
                 // Tie dimensions safely to outermost viewport rather than unstable grid
                 // internals
                 iv.fitWidthProperty().bind(gridScrollPane.widthProperty()
-                        .subtract(imageGrid.getHgap() * (cols - 1) + 40)
+                        .subtract(imageGrid.getHgap() * (cols - 1) + 60)
                         .divide(cols));
 
                 iv.fitHeightProperty().bind(iv.fitWidthProperty().multiply(0.75));
@@ -153,6 +153,7 @@ public class DashboardController implements Initializable {
     private void createUploadPromptCell() {
         StackPane cell = new StackPane();
         cell.getStyleClass().add("upload-cell");
+        cell.setFocusTraversable(true);
 
         VBox content = new VBox(10);
         content.setAlignment(javafx.geometry.Pos.CENTER);
@@ -203,6 +204,7 @@ public class DashboardController implements Initializable {
 
             StackPane cell = new StackPane(imageView);
             cell.getStyleClass().add("image-cell");
+            cell.setFocusTraversable(true);
 
             // Randomly assign selection or badges for visual variety
             if (index == 1) { // Let's mark the second one as selected like in the mockup
@@ -230,7 +232,13 @@ public class DashboardController implements Initializable {
 
             cell.setOnMouseClicked(event -> {
                 setSelectedPreview(file);
-                // In real app, toggle "selected" style class across grid cells
+                // Remove 'selected' class from all cells
+                for (StackPane c : allCells) {
+                    c.getStyleClass().remove("selected");
+                }
+                // Apply 'selected' class to the clicked cell
+                cell.getStyleClass().add("selected");
+                cell.requestFocus();
             });
 
             // Push into memory rather than directly injecting
