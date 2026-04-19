@@ -1,5 +1,7 @@
 package com.example.project.controllers;
 
+import com.example.project.database.DatabaseManager;
+import com.example.project.models.ImageRecord;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
@@ -10,8 +12,12 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 
+import java.io.File;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ResourceBundle;
 
 public class DashboardController implements Initializable {
@@ -44,24 +50,37 @@ public class DashboardController implements Initializable {
     @FXML
     private javafx.scene.layout.HBox topBar;
 
+    @FXML
+    private javafx.scene.control.TextArea annotationArea;
+
+    @FXML
+    private javafx.scene.control.Button syncMetadataBtn;
+
+    private java.util.Map<String, String> annotations;
+    private StackPane currentActiveCell = null;
+    private String currentActiveFile = null;
+    private DatabaseManager db = DatabaseManager.getInstance();
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        // Load dummy images
-        String[] imageFiles = { "photo_1.png", "photo_2.png", "photo_3.png", "photo_4.png" };
+        // Init state
+        annotations = db.loadAllAnnotations();
 
-        // 1. First column: The Upload Zone prompt
+        // 1. The Upload Zone cell
         createUploadPromptCell();
 
-        // 2. Populate remaining 15 spaces
-        for (int i = 0; i < 15; i++) {
-            String file = imageFiles[i % 4];
-            createAndAddImageCell(file, i + 1); // pass adjusted index for badge alignments
+        // 2. Populate from DB
+        java.util.List<ImageRecord> library = db.loadLibrary();
+        for (int i = 0; i < library.size(); i++) {
+            createAndAddImageCell(library.get(i), i + 1);
         }
 
-        imageCountLabel.setText("Showing 16 items from recent import");
+        imageCountLabel.setText("Showing " + library.size() + " items from recent import");
 
         // Select first by default
-        setSelectedPreview(imageFiles[0]);
+        if (!library.isEmpty()) {
+            setSelectedPreview(library.get(0).getFilePath());
+        }
 
         // --- Sidebar Shrink Binding ---
         // Sacrifices right-panel width (max 450) if main area drastically decreases,
@@ -112,6 +131,44 @@ public class DashboardController implements Initializable {
         // bug
         currentCols = 4;
         rebuildGridPane(4);
+
+        // Map Sync Action
+        syncMetadataBtn.setOnAction(e -> {
+            if (currentActiveCell != null && currentActiveFile != null) {
+                String text = annotationArea.getText();
+                boolean isEmpty = text == null || text.trim().isEmpty();
+                
+                if (!isEmpty) {
+                    annotations.put(currentActiveFile, text);
+                    db.saveAnnotation(currentActiveFile, text);
+                    if (!hasHeartBadge(currentActiveCell)) {
+                        Label heartBadge = createHeartBadge();
+                        StackPane.setAlignment(heartBadge, javafx.geometry.Pos.TOP_LEFT);
+                        StackPane.setMargin(heartBadge, new javafx.geometry.Insets(0, 0, 0, 10));
+                        currentActiveCell.getChildren().add(heartBadge);
+                    }
+                } else {
+                    annotations.remove(currentActiveFile);
+                    db.deleteAnnotation(currentActiveFile);
+                    removeHeartBadge(currentActiveCell);
+                }
+            }
+        });
+    }
+
+    private boolean hasHeartBadge(StackPane cell) {
+        if (cell == null) return false;
+        for (javafx.scene.Node n : cell.getChildren()) {
+            if (n instanceof Label && n.getStyleClass().contains("heart-badge")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void removeHeartBadge(StackPane cell) {
+        if (cell == null) return;
+        cell.getChildren().removeIf(n -> n instanceof Label && n.getStyleClass().contains("heart-badge"));
     }
 
     private void rebuildGridPane(int cols) {
@@ -168,19 +225,52 @@ public class DashboardController implements Initializable {
         cell.getChildren().add(content);
 
         cell.setOnMouseClicked(e -> {
-            System.out.println("Trigger OS FileChooser intent here");
+            FileChooser chooser = new FileChooser();
+            chooser.setTitle("Import Image");
+            chooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.nef")
+            );
+            File selectedFile = chooser.showOpenDialog(cell.getScene().getWindow());
+            if (selectedFile != null) {
+                importImageToLibrary(selectedFile);
+            }
         });
 
         allCells.add(cell);
     }
 
-    private void createAndAddImageCell(String file, int index) {
+    private void importImageToLibrary(File sourceFile) {
         try {
-            URL resource = getClass().getResource("/com/example/project/images/" + file);
-            if (resource == null)
-                return;
+            File destFolder = new File(DatabaseManager.IMAGES_FOLDER);
+            File destFile = new File(destFolder, sourceFile.getName());
+            
+            if (destFile.exists()) {
+                destFile = new File(destFolder, System.currentTimeMillis() + "_" + sourceFile.getName());
+            }
+            
+            Files.copy(sourceFile.toPath(), destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            
+            ImageRecord record = new ImageRecord(0, destFile.getAbsolutePath(), destFile.getName(), System.currentTimeMillis());
+            db.insertImageRecord(record);
+            
+            createAndAddImageCell(record, allCells.size());
+            
+            int count = allCells.size() - 1;
+            imageCountLabel.setText("Showing " + count + " items from recent import");
+            
+            rebuildGridPane(currentCols);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
 
-            Image img = new Image(resource.toExternalForm());
+    private void createAndAddImageCell(ImageRecord record, int index) {
+        String file = record.getFilePath();
+        try {
+            File imgFile = new File(file);
+            if (!imgFile.exists()) return;
+
+            Image img = new Image(imgFile.toURI().toString());
             ImageView imageView = new ImageView(img);
             imageView.setPreserveRatio(false); // Make them obey forced bounds
 
@@ -206,28 +296,20 @@ public class DashboardController implements Initializable {
             cell.getStyleClass().add("image-cell");
             cell.setFocusTraversable(true);
 
-            // Randomly assign selection or badges for visual variety
-            if (index == 1) { // Let's mark the second one as selected like in the mockup
+            // Filename hover label for all cells
+            Label fileLabel = new Label(record.getFilename());
+            fileLabel.getStyleClass().add("grid-filename");
+            StackPane.setAlignment(fileLabel, javafx.geometry.Pos.BOTTOM_CENTER);
+            StackPane.setMargin(fileLabel, new javafx.geometry.Insets(0, 0, 15, 0));
+            fileLabel.setMouseTransparent(true);
+            fileLabel.visibleProperty().bind(cell.hoverProperty());
+            cell.getChildren().add(fileLabel);
+
+            // Initial visual state
+            if (index == 1) { 
                 cell.getStyleClass().add("selected");
-
-                // Add heart badge
-                Label heartBadge = createHeartBadge();
-                StackPane.setAlignment(heartBadge, javafx.geometry.Pos.TOP_LEFT);
-                StackPane.setMargin(heartBadge, new javafx.geometry.Insets(0, 0, 0, 10));
-
-                // Filename label
-                Label fileLabel = new Label("DSC_0492.NEF");
-                fileLabel.getStyleClass().add("grid-filename");
-                StackPane.setAlignment(fileLabel, javafx.geometry.Pos.BOTTOM_CENTER);
-                StackPane.setMargin(fileLabel, new javafx.geometry.Insets(0, 0, 15, 0));
-
-                cell.getChildren().addAll(heartBadge, fileLabel);
-            } else if (index == 2) {
-                // Add heart badge
-                Label heartBadge = createHeartBadge();
-                StackPane.setAlignment(heartBadge, javafx.geometry.Pos.TOP_LEFT);
-                StackPane.setMargin(heartBadge, new javafx.geometry.Insets(0, 0, 0, 10));
-                cell.getChildren().add(heartBadge);
+                currentActiveCell = cell;
+                currentActiveFile = file;
             }
 
             cell.setOnMouseClicked(event -> {
@@ -239,6 +321,13 @@ public class DashboardController implements Initializable {
                 // Apply 'selected' class to the clicked cell
                 cell.getStyleClass().add("selected");
                 cell.requestFocus();
+                
+                // Track state and reload annotation map
+                currentActiveCell = cell;
+                currentActiveFile = file;
+                if (annotationArea != null) {
+                    annotationArea.setText(annotations.getOrDefault(file, ""));
+                }
             });
 
             // Push into memory rather than directly injecting
@@ -257,9 +346,9 @@ public class DashboardController implements Initializable {
 
     private void setSelectedPreview(String file) {
         try {
-            URL resource = getClass().getResource("/com/example/project/images/" + file);
-            if (resource != null) {
-                selectedImagePreview.setImage(new Image(resource.toExternalForm()));
+            File imgFile = new File(file);
+            if (imgFile.exists()) {
+                selectedImagePreview.setImage(new Image(imgFile.toURI().toString()));
             }
         } catch (Exception e) {
             e.printStackTrace();

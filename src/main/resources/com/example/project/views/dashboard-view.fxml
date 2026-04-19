@@ -202,14 +202,13 @@
                                 <HBox>
                                     <Label text="♥ ANNOTATIONS" styleClass="section-label-tertiary"/>
                                     <Region HBox.hgrow="ALWAYS"/>
-                                    <Label text="SAVED" styleClass="subtitle-text" style="-fx-font-size: 10px;"/>
                                 </HBox>
-                                <TextArea promptText="Add editorial notes, client feedback, or processing intent here..." 
+                                <TextArea fx:id="annotationArea" promptText="Add editorial notes, client feedback, or processing intent here..." 
                                           styleClass="annotation-area" wrapText="true" prefRowCount="4"/>
                                           
                                 <HBox spacing="10" alignment="CENTER_RIGHT">
                                     <Button text="Copy Notes" styleClass="btn-secondary"/>
-                                    <Button text="Sync Metadata" styleClass="btn-tertiary-outline"/>
+                                    <Button fx:id="syncMetadataBtn" text="Save Annotations" styleClass="btn-tertiary-outline"/>
                                 </HBox>
                             </VBox>
                             
