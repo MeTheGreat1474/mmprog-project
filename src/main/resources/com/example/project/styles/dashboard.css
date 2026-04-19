@@ -229,16 +229,25 @@
 }
 
 .image-cell {
-    -fx-background-color: #1A1A1A;
-    -fx-background-radius: 8;
+    -fx-background-color: -background-dark;
     -fx-cursor: hand;
     -fx-border-color: transparent;
-    -fx-border-width: 3;
-    -fx-border-radius: 8;
+    -fx-border-width: 1;
 }
 
-.image-cell:hover, .image-cell:focused {
+.image-cell:hover,
+.image-cell:focused {
     -fx-border-color: #546E7A;
+    -fx-border-radius: 8px;
+}
+
+.image-cell>.image-view {
+    /* Hack for rounded corners on images in JavaFX: need a clip or we just round the container */
+}
+
+.image-cell.selected {
+    -fx-border-color: -color-primary;
+    -fx-border-radius: 8px;
 }
 
 /* Upload Prompt Cell */
@@ -252,7 +261,8 @@
     -fx-padding: 20;
 }
 
-.upload-cell:hover, .upload-cell:focused {
+.upload-cell:hover,
+.upload-cell:focused {
     -fx-border-color: -color-primary;
     -fx-background-color: rgba(0, 176, 255, 0.05);
     /* Slight blue tint on hover/focus */
@@ -270,30 +280,13 @@
     -fx-font-weight: bold;
 }
 
-.image-cell>.image-view {
-    /* Hack for rounded corners on images in JavaFX: need a clip or we just round the container */
-}
 
-.image-cell.selected {
-    -fx-border-color: -color-primary;
-    -fx-border-width: 3;
-    -fx-border-radius: 8;
-}
 
 .heart-badge {
     -fx-background-color: transparent;
     -fx-text-fill: #FF4081;
-    /* Standard red heart, could also use tertiary #FFAB40 */
     -fx-font-size: 32px;
-}
-
-.check-badge {
-    -fx-background-color: -color-primary;
-    -fx-text-fill: #121212;
-    -fx-background-radius: 50%;
-    -fx-padding: 2 6 2 6;
-    -fx-font-size: 12px;
-    -fx-font-weight: bold;
+    -fx-effect: dropshadow(two-pass-box, white, 2, 1.0, 0, 0);
 }
 
 .grid-filename {

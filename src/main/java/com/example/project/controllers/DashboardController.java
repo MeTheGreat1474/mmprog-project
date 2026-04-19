@@ -13,6 +13,8 @@ import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import javafx.scene.Scene;
 
 import java.io.File;
 import java.net.URL;
@@ -55,6 +57,12 @@ public class DashboardController implements Initializable {
 
     @FXML
     private javafx.scene.control.Button syncMetadataBtn;
+
+    @FXML
+    private javafx.scene.control.Button removeMetadataBtn;
+
+    @FXML
+    private javafx.scene.control.Button openFullscreenBtn;
 
     private java.util.Map<String, String> annotations;
     private StackPane currentActiveCell = null;
@@ -137,15 +145,22 @@ public class DashboardController implements Initializable {
             if (currentActiveCell != null && currentActiveFile != null) {
                 String text = annotationArea.getText();
                 boolean isEmpty = text == null || text.trim().isEmpty();
-                
+
                 if (!isEmpty) {
                     annotations.put(currentActiveFile, text);
                     db.saveAnnotation(currentActiveFile, text);
                     if (!hasHeartBadge(currentActiveCell)) {
                         Label heartBadge = createHeartBadge();
                         StackPane.setAlignment(heartBadge, javafx.geometry.Pos.TOP_LEFT);
-                        StackPane.setMargin(heartBadge, new javafx.geometry.Insets(0, 0, 0, 10));
-                        currentActiveCell.getChildren().add(heartBadge);
+                        StackPane.setMargin(heartBadge, new javafx.geometry.Insets(0, 0, 0, 10)); // Adjusted inset
+
+                        if (!currentActiveCell.getChildren().isEmpty()
+                                && currentActiveCell.getChildren().get(0) instanceof StackPane) {
+                            ((StackPane) currentActiveCell.getChildren().get(0)).getChildren().add(heartBadge);
+                        } else {
+                            // Fallback
+                            currentActiveCell.getChildren().add(heartBadge);
+                        }
                     }
                 } else {
                     annotations.remove(currentActiveFile);
@@ -154,21 +169,73 @@ public class DashboardController implements Initializable {
                 }
             }
         });
+
+        if (removeMetadataBtn != null) {
+            removeMetadataBtn.setOnAction(e -> {
+                System.out.println("Clear Annotation Button triggered");
+                if (currentActiveCell != null && currentActiveFile != null) {
+                    annotationArea.setText("");
+                    annotations.remove(currentActiveFile);
+                    db.deleteAnnotation(currentActiveFile);
+                    removeHeartBadge(currentActiveCell);
+                    System.out.println("Purged text, removed from memory, deleted from DB, and detached badge for: " + currentActiveFile);
+                } else {
+                    System.out.println("Ignored clear because active cell or active file state is null.");
+                }
+            });
+        }
+
+        if (openFullscreenBtn != null) {
+            openFullscreenBtn.setOnAction(e -> {
+                if (currentActiveFile != null) {
+                    fetchAndOpenImageWindow(currentActiveFile);
+                }
+            });
+        }
     }
 
     private boolean hasHeartBadge(StackPane cell) {
-        if (cell == null) return false;
-        for (javafx.scene.Node n : cell.getChildren()) {
-            if (n instanceof Label && n.getStyleClass().contains("heart-badge")) {
-                return true;
+        if (cell == null || cell.getChildren().isEmpty())
+            return false;
+        if (cell.getChildren().get(0) instanceof StackPane) {
+            StackPane wrapper = (StackPane) cell.getChildren().get(0);
+            for (javafx.scene.Node n : wrapper.getChildren()) {
+                if (n instanceof Label && n.getStyleClass().contains("heart-badge")) {
+                    return true;
+                }
+            }
+        } else {
+            for (javafx.scene.Node n : cell.getChildren()) {
+                if (n instanceof Label && n.getStyleClass().contains("heart-badge"))
+                    return true;
             }
         }
         return false;
     }
 
     private void removeHeartBadge(StackPane cell) {
-        if (cell == null) return;
-        cell.getChildren().removeIf(n -> n instanceof Label && n.getStyleClass().contains("heart-badge"));
+        if (cell == null || cell.getChildren().isEmpty()) return;
+        
+        if (cell.getChildren().get(0) instanceof StackPane) {
+            StackPane wrapper = (StackPane) cell.getChildren().get(0);
+            javafx.scene.Node toRemove = null;
+            for (javafx.scene.Node n : wrapper.getChildren()) {
+                if (n instanceof Label && n.getStyleClass().contains("heart-badge")) {
+                    toRemove = n;
+                    break;
+                }
+            }
+            if (toRemove != null) wrapper.getChildren().remove(toRemove);
+        } else {
+            javafx.scene.Node toRemove = null;
+            for (javafx.scene.Node n : cell.getChildren()) {
+                if (n instanceof Label && n.getStyleClass().contains("heart-badge")) {
+                    toRemove = n;
+                    break;
+                }
+            }
+            if (toRemove != null) cell.getChildren().remove(toRemove);
+        }
     }
 
     private void rebuildGridPane(int cols) {
@@ -186,21 +253,38 @@ public class DashboardController implements Initializable {
         // Re-inject the cached cells into the fresh grid bounds
         for (int i = 0; i < allCells.size(); i++) {
             StackPane cell = allCells.get(i);
+
+            // Fixed height logic
+            cell.setPrefHeight(190);
+            cell.setMinHeight(190);
+            cell.setMaxHeight(190);
+
             javafx.scene.Node baseNode = cell.getChildren().get(0);
 
-            if (baseNode instanceof ImageView) {
+            if (baseNode instanceof StackPane) {
+                StackPane wrapper = (StackPane) baseNode;
+                if (!wrapper.getChildren().isEmpty() && wrapper.getChildren().get(0) instanceof ImageView) {
+                    ImageView iv = (ImageView) wrapper.getChildren().get(0);
+                    // Sever old bindings to prevent cyclical geometry crashing
+                    iv.fitWidthProperty().unbind();
+                    iv.fitHeightProperty().unbind();
+
+                    // Tie dimensions safely to outermost viewport rather than unstable grid
+                    // internals
+                    iv.fitWidthProperty().bind(gridScrollPane.widthProperty()
+                            .subtract(imageGrid.getHgap() * (cols - 1) + 60)
+                            .divide(cols));
+
+                    iv.setFitHeight(180);
+                }
+            } else if (baseNode instanceof ImageView) {
                 ImageView iv = (ImageView) baseNode;
-                // Sever old bindings to prevent cyclical geometry crashing
                 iv.fitWidthProperty().unbind();
                 iv.fitHeightProperty().unbind();
-
-                // Tie dimensions safely to outermost viewport rather than unstable grid
-                // internals
                 iv.fitWidthProperty().bind(gridScrollPane.widthProperty()
                         .subtract(imageGrid.getHgap() * (cols - 1) + 60)
                         .divide(cols));
-
-                iv.fitHeightProperty().bind(iv.fitWidthProperty().multiply(0.75));
+                iv.setFitHeight(180);
             }
 
             imageGrid.add(cell, i % cols, i / cols);
@@ -228,8 +312,7 @@ public class DashboardController implements Initializable {
             FileChooser chooser = new FileChooser();
             chooser.setTitle("Import Image");
             chooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.nef")
-            );
+                    new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.nef"));
             File selectedFile = chooser.showOpenDialog(cell.getScene().getWindow());
             if (selectedFile != null) {
                 importImageToLibrary(selectedFile);
@@ -243,21 +326,22 @@ public class DashboardController implements Initializable {
         try {
             File destFolder = new File(DatabaseManager.IMAGES_FOLDER);
             File destFile = new File(destFolder, sourceFile.getName());
-            
+
             if (destFile.exists()) {
                 destFile = new File(destFolder, System.currentTimeMillis() + "_" + sourceFile.getName());
             }
-            
+
             Files.copy(sourceFile.toPath(), destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            
-            ImageRecord record = new ImageRecord(0, destFile.getAbsolutePath(), destFile.getName(), System.currentTimeMillis());
+
+            ImageRecord record = new ImageRecord(0, destFile.getAbsolutePath(), destFile.getName(),
+                    System.currentTimeMillis());
             db.insertImageRecord(record);
-            
+
             createAndAddImageCell(record, allCells.size());
-            
+
             int count = allCells.size() - 1;
             imageCountLabel.setText("Showing " + count + " items from recent import");
-            
+
             rebuildGridPane(currentCols);
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -268,11 +352,12 @@ public class DashboardController implements Initializable {
         String file = record.getFilePath();
         try {
             File imgFile = new File(file);
-            if (!imgFile.exists()) return;
+            if (!imgFile.exists())
+                return;
 
             Image img = new Image(imgFile.toURI().toString());
             ImageView imageView = new ImageView(img);
-            imageView.setPreserveRatio(false); // Make them obey forced bounds
+            imageView.setPreserveRatio(true); // Maintain original image ratio
 
             // Bind image scaling natively to scroll pane container width to prevent layout
             // overflow loops.
@@ -283,16 +368,10 @@ public class DashboardController implements Initializable {
             imageView.setFitWidth(250);
             imageView.setFitHeight(187.5);
 
-            // Perfectly round the physical image view so it doesn't bleed out of the cell
-            // container
-            javafx.scene.shape.Rectangle clip = new javafx.scene.shape.Rectangle();
-            clip.widthProperty().bind(imageView.fitWidthProperty());
-            clip.heightProperty().bind(imageView.fitHeightProperty());
-            clip.setArcWidth(16);
-            clip.setArcHeight(16);
-            imageView.setClip(clip);
+            StackPane imageWrapper = new StackPane(imageView);
+            imageWrapper.setMaxSize(javafx.scene.layout.Region.USE_PREF_SIZE, javafx.scene.layout.Region.USE_PREF_SIZE);
 
-            StackPane cell = new StackPane(imageView);
+            StackPane cell = new StackPane(imageWrapper);
             cell.getStyleClass().add("image-cell");
             cell.setFocusTraversable(true);
 
@@ -306,10 +385,19 @@ public class DashboardController implements Initializable {
             cell.getChildren().add(fileLabel);
 
             // Initial visual state
-            if (index == 1) { 
+            if (index == 1) {
                 cell.getStyleClass().add("selected");
                 currentActiveCell = cell;
                 currentActiveFile = file;
+            }
+
+            // Sync visual annotation heart presence on boot
+            String existingNotes = annotations.get(file);
+            if (existingNotes != null && !existingNotes.trim().isEmpty()) {
+                Label heartBadge = createHeartBadge();
+                StackPane.setAlignment(heartBadge, javafx.geometry.Pos.TOP_LEFT);
+                StackPane.setMargin(heartBadge, new javafx.geometry.Insets(0, 0, 0, 10)); // Adjusted inset
+                imageWrapper.getChildren().add(heartBadge);
             }
 
             cell.setOnMouseClicked(event -> {
@@ -321,12 +409,16 @@ public class DashboardController implements Initializable {
                 // Apply 'selected' class to the clicked cell
                 cell.getStyleClass().add("selected");
                 cell.requestFocus();
-                
+
                 // Track state and reload annotation map
                 currentActiveCell = cell;
                 currentActiveFile = file;
                 if (annotationArea != null) {
                     annotationArea.setText(annotations.getOrDefault(file, ""));
+                }
+
+                if (event.getClickCount() == 2) {
+                    fetchAndOpenImageWindow(file);
                 }
             });
 
@@ -352,6 +444,34 @@ public class DashboardController implements Initializable {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void fetchAndOpenImageWindow(String filePath) {
+        try {
+            File imgFile = new File(filePath);
+            if (!imgFile.exists())
+                return;
+
+            Image fullImg = new Image(imgFile.toURI().toString());
+            ImageView fullView = new ImageView(fullImg);
+            fullView.setPreserveRatio(true);
+            fullView.setSmooth(true);
+
+            StackPane root = new StackPane(fullView);
+            root.setStyle("-fx-background-color: #0D0D0D;");
+
+            Scene scene = new Scene(root, 1024, 768);
+
+            fullView.fitWidthProperty().bind(scene.widthProperty());
+            fullView.fitHeightProperty().bind(scene.heightProperty());
+
+            Stage stage = new Stage();
+            stage.setTitle("Darkroom Atelier Viewer - " + imgFile.getName());
+            stage.setScene(scene);
+            stage.show();
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
     }
 }
