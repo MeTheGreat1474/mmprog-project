@@ -355,7 +355,8 @@ public class DashboardController implements Initializable {
             if (!imgFile.exists())
                 return;
 
-            Image img = new Image(imgFile.toURI().toString());
+            // Load image using native resampling to 300px to strip out high-resolution aliasing noise, making thumbnails eye-pleasing
+            Image img = new Image(imgFile.toURI().toString(), 300, 300, true, true);
             ImageView imageView = new ImageView(img);
             imageView.setPreserveRatio(true); // Maintain original image ratio
 
@@ -440,7 +441,8 @@ public class DashboardController implements Initializable {
         try {
             File imgFile = new File(file);
             if (imgFile.exists()) {
-                selectedImagePreview.setImage(new Image(imgFile.toURI().toString()));
+                // Pre-scale the right sidebar to 500px natively to prevent downsampling artifact crunching
+                selectedImagePreview.setImage(new Image(imgFile.toURI().toString(), 500, 500, true, true));
             }
         } catch (Exception e) {
             e.printStackTrace();

@@ -207,7 +207,7 @@
                                           styleClass="annotation-area" wrapText="true" prefRowCount="4"/>
                                           
                                 <HBox spacing="10" alignment="CENTER_RIGHT">
-                                    <Button fx:id="removeMetadataBtn" text="Clear Annotation" styleClass="btn-secondary"/>
+                                    <Button fx:id="removeMetadataBtn" text="Clear" styleClass="btn-secondary"/>
                                     <Button fx:id="syncMetadataBtn" text="Save Annotations" styleClass="btn-tertiary-outline"/>
                                 </HBox>
                                 <Button fx:id="openFullscreenBtn" text="Open Full Image Viewer" styleClass="btn-primary" maxWidth="Infinity">
