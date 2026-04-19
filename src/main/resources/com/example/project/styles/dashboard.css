@@ -8,8 +8,11 @@
  * Neutral: #121212
  */
 
+/* ==========================================================================
+   1. GLOBAL VARIABLES & TYPOGRAPHY
+   ========================================================================== */
 .root {
-    -fx-font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -fx-font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     -background-neutral: #121212;
     -background-sidebar: #1A1A1A;
     -background-panel: #262626;
@@ -23,7 +26,6 @@
     -fx-background-color: -background-neutral;
 }
 
-/* Typography Overrides */
 .headline-text {
     -fx-font-family: "Manrope", "Segoe UI", sans-serif;
     -fx-font-size: 28px;
@@ -50,17 +52,9 @@
     -fx-text-fill: -text-main;
 }
 
-/* Layout Core Elements */
-.sidebar {
-    -fx-background-color: -background-sidebar;
-}
-
-.top-bar {
-    -fx-background-color: -background-sidebar;
-    -fx-border-color: #333333;
-    -fx-border-width: 0 0 1 0;
-}
-
+/* ==========================================================================
+   2. CORE LAYOUT CONTAINERS
+   ========================================================================== */
 .main-split {
     -fx-background-color: transparent;
     -fx-padding: 0;
@@ -71,17 +65,28 @@
     -fx-background-color: #333333;
 }
 
+.sidebar {
+    -fx-background-color: -background-sidebar;
+}
+
+.top-bar {
+    -fx-background-color: -background-sidebar;
+    -fx-border-color: #333333;
+    -fx-border-width: 0 0 1 0;
+}
+
 .grid-container {
     -fx-background-color: -background-dark;
 }
 
-.grid-scroll {
+.grid-scroll,
+.grid-scroll .viewport {
     -fx-background-color: transparent;
     -fx-background: -background-dark;
 }
 
-.grid-scroll .viewport {
-    -fx-background-color: transparent;
+.properties-panel {
+    -fx-background-color: -background-panel;
 }
 
 .properties-panel-scroll {
@@ -89,11 +94,9 @@
     -fx-background: -background-panel;
 }
 
-.properties-panel {
-    -fx-background-color: -background-panel;
-}
-
-/* Sidebar navigation */
+/* ==========================================================================
+   3. SIDEBAR NAVIGATION
+   ========================================================================== */
 .section-label {
     -fx-font-size: 11px;
     -fx-font-weight: bold;
@@ -118,7 +121,6 @@
 
 .nav-button-active {
     -fx-background-color: #223c4a;
-    /* primary with low opacity */
     -fx-text-fill: -color-primary;
     -fx-border-color: -color-primary;
     -fx-border-width: 0 0 0 3;
@@ -139,7 +141,9 @@
     -fx-text-fill: white;
 }
 
-/* Top bar Inputs/Buttons */
+/* ==========================================================================
+   4. INPUTS & GENERIC BUTTONS
+   ========================================================================== */
 .search-field {
     -fx-background-color: #2A2A2A;
     -fx-text-fill: white;
@@ -197,37 +201,9 @@
     -fx-cursor: hand;
 }
 
-.profile-icon {
-    -fx-background-color: #333333;
-    -fx-background-radius: 50%;
-    -fx-padding: 5 10 5 10;
-    -fx-text-fill: white;
-}
-
-/* Custom Window Controls */
-.window-control {
-    -fx-background-color: transparent;
-    -fx-text-fill: #999999;
-    -fx-font-weight: bold;
-    -fx-font-family: Arial, sans-serif;
-    -fx-font-size: 16px;
-    -fx-background-radius: 4;
-    -fx-min-width: 35px;
-    -fx-min-height: 25px;
-    -fx-cursor: hand;
-}
-
-.window-control:hover {
-    -fx-background-color: #333333;
-    -fx-text-fill: white;
-}
-
-.window-close:hover {
-    -fx-background-color: #E81123;
-    /* Standard Windows Close Red */
-    -fx-text-fill: white;
-}
-
+/* ==========================================================================
+   5. IMAGE GRID ELEMENTS
+   ========================================================================== */
 .image-cell {
     -fx-background-color: -background-dark;
     -fx-cursor: hand;
@@ -241,46 +217,10 @@
     -fx-border-radius: 8px;
 }
 
-.image-cell>.image-view {
-    /* Hack for rounded corners on images in JavaFX: need a clip or we just round the container */
-}
-
 .image-cell.selected {
     -fx-border-color: -color-primary;
     -fx-border-radius: 8px;
 }
-
-/* Upload Prompt Cell */
-.upload-cell {
-    -fx-background-color: transparent;
-    -fx-border-color: #4D4D4D;
-    -fx-border-width: 2;
-    -fx-border-style: dashed;
-    -fx-border-radius: 8;
-    -fx-cursor: hand;
-    -fx-padding: 20;
-}
-
-.upload-cell:hover,
-.upload-cell:focused {
-    -fx-border-color: -color-primary;
-    -fx-background-color: rgba(0, 176, 255, 0.05);
-    /* Slight blue tint on hover/focus */
-}
-
-.upload-icon {
-    -fx-font-size: 36px;
-    -fx-text-fill: -color-primary;
-}
-
-.upload-text {
-    -fx-text-fill: -text-muted;
-    -fx-font-size: 13px;
-    -fx-text-alignment: center;
-    -fx-font-weight: bold;
-}
-
-
 
 .heart-badge {
     -fx-background-color: transparent;
@@ -297,7 +237,38 @@
     -fx-background-radius: 4;
 }
 
-/* Properties Panel */
+/* Upload Prompt Variant */
+.upload-cell {
+    -fx-background-color: transparent;
+    -fx-border-color: #4D4D4D;
+    -fx-border-width: 2;
+    -fx-border-style: dashed;
+    -fx-border-radius: 8;
+    -fx-cursor: hand;
+    -fx-padding: 20;
+}
+
+.upload-cell:hover,
+.upload-cell:focused {
+    -fx-border-color: -color-primary;
+    -fx-background-color: rgba(0, 176, 255, 0.05); /* Slight blue tint */
+}
+
+.upload-icon {
+    -fx-font-size: 36px;
+    -fx-text-fill: -color-primary;
+}
+
+.upload-text {
+    -fx-text-fill: -text-muted;
+    -fx-font-size: 13px;
+    -fx-text-alignment: center;
+    -fx-font-weight: bold;
+}
+
+/* ==========================================================================
+   6. METADATA SIDEBAR COMPONENTS
+   ========================================================================== */
 .preview-image {
     -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.5), 10, 0, 0, 4);
 }
@@ -325,10 +296,6 @@
     -fx-font-size: 12px;
 }
 
-.data-grid {
-    /* Style for the 2x2 grid */
-}
-
 .data-cell {
     -fx-background-color: #333333;
     -fx-padding: 10;
@@ -348,7 +315,6 @@
     -fx-font-weight: bold;
 }
 
-/* Tags */
 .tag {
     -fx-background-color: #333333;
     -fx-text-fill: #CCCCCC;
@@ -358,8 +324,7 @@
 }
 
 .tag-tertiary {
-    -fx-background-color: #4D3921;
-    /* Dark orange bg based on tertiary */
+    -fx-background-color: #4D3921; /* Dark orange bg based on tertiary */
     -fx-text-fill: -color-tertiary;
     -fx-padding: 5 10 5 10;
     -fx-background-radius: 4;
@@ -369,7 +334,7 @@
     -fx-border-width: 1;
 }
 
-/* Annotation Area */
+/* Annotation Input Box */
 .annotation-area {
     -fx-background-color: #333333;
     -fx-control-inner-background: #333333;
@@ -389,7 +354,7 @@
     -fx-border-width: 1;
 }
 
-/* Strip internal ScrollPane focus rings generated by JavaFX inside TextAreas */
+/* Strip native internal ScrollPane focus rings generated by JavaFX text areas */
 .annotation-area .scroll-pane,
 .annotation-area .scroll-pane:focused,
 .annotation-area .scroll-pane .viewport,
@@ -399,7 +364,9 @@
     -fx-border-color: transparent;
 }
 
-/* ScrollBars */
+/* ==========================================================================
+   7. GLOBAL SCROLLBARS
+   ========================================================================== */
 .scroll-bar:vertical,
 .scroll-bar:horizontal {
     -fx-background-color: transparent;

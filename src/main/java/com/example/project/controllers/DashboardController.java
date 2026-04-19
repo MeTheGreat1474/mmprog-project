@@ -22,62 +22,72 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ResourceBundle;
 
+/**
+ * Controller for the Main Dashboard Layout.
+ * Handles the dynamic image grid sizing, database metadata synchronization,
+ * and user interactions seamlessly inside the primary UI instance.
+ */
 public class DashboardController implements Initializable {
 
-    @FXML
-    private GridPane imageGrid;
+    // =========================================================================
+    // STATIC LAYOUT CONSTANTS
+    // =========================================================================
+    
+    private static final int SIDEBAR_WIDTH_MAX = 450;
+    
+    private static final double GRID_CELL_MIN_WIDTH = 200.0;
+    private static final int GRID_CELL_HEIGHT = 190;
+    private static final int GRID_IMAGE_HEIGHT = 180;
+    
+    private static final int DEFAULT_COLUMNS = 4;
+    private static final int THUMBNAIL_RESAMPLE_SIZE = 300;
+    private static final int PREVIEW_RESAMPLE_SIZE = 500;
+    private static final double FALLBACK_THUMBNAIL_WIDTH = 250.0;
+    private static final double FALLBACK_THUMBNAIL_HEIGHT = 187.5;
+    
+    private static final int FULL_VIEWER_WIDTH = 1024;
+    private static final int FULL_VIEWER_HEIGHT = 768;
 
-    // Internal state cache for dynamic restructure
-    private java.util.List<StackPane> allCells = new java.util.ArrayList<>();
+    // =========================================================================
+    // FXML UI INJECTIONS
+    // =========================================================================
+    
+    @FXML private GridPane imageGrid;
+    @FXML private ImageView selectedImagePreview;
+    @FXML private Label imageCountLabel;
+    @FXML private javafx.scene.control.ScrollPane gridScrollPane;
+    @FXML private javafx.scene.layout.BorderPane mainSplitContainer;
+    @FXML private javafx.scene.control.ScrollPane metadataSidebar;
+    @FXML private javafx.scene.layout.HBox topRightActions;
+    @FXML private javafx.scene.layout.HBox topBar;
+    @FXML private javafx.scene.control.TextArea annotationArea;
+    @FXML private javafx.scene.control.Button syncMetadataBtn;
+    @FXML private javafx.scene.control.Button removeMetadataBtn;
+    @FXML private javafx.scene.control.Button openFullscreenBtn;
+
+    // =========================================================================
+    // INTERNAL STATE VARIABLES
+    // =========================================================================
+    
+    private java.util.List<StackPane> cachedImageCells = new java.util.ArrayList<>();
     private int currentCols = -1;
-
-    @FXML
-    private ImageView selectedImagePreview;
-
-    @FXML
-    private Label imageCountLabel;
-
-    @FXML
-    private javafx.scene.control.ScrollPane gridScrollPane;
-
-    @FXML
-    private javafx.scene.layout.BorderPane mainSplitContainer;
-
-    @FXML
-    private javafx.scene.control.ScrollPane metadataSidebar;
-
-    @FXML
-    private javafx.scene.layout.HBox topRightActions;
-
-    @FXML
-    private javafx.scene.layout.HBox topBar;
-
-    @FXML
-    private javafx.scene.control.TextArea annotationArea;
-
-    @FXML
-    private javafx.scene.control.Button syncMetadataBtn;
-
-    @FXML
-    private javafx.scene.control.Button removeMetadataBtn;
-
-    @FXML
-    private javafx.scene.control.Button openFullscreenBtn;
-
     private java.util.Map<String, String> annotations;
     private StackPane currentActiveCell = null;
     private String currentActiveFile = null;
     private DatabaseManager db = DatabaseManager.getInstance();
 
+    // =========================================================================
+    // INITIALIZATION LIFECYCLE
+    // =========================================================================
+    
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        // Init state
+        
+        // 1. Load active annotations from SQLite database
         annotations = db.loadAllAnnotations();
 
-        // 1. The Upload Zone cell
+        // 2. Initialize the dynamic grid components
         createUploadPromptCell();
-
-        // 2. Populate from DB
         java.util.List<ImageRecord> library = db.loadLibrary();
         for (int i = 0; i < library.size(); i++) {
             createAndAddImageCell(library.get(i), i + 1);
@@ -85,14 +95,26 @@ public class DashboardController implements Initializable {
 
         imageCountLabel.setText("Showing " + library.size() + " items from recent import");
 
-        // Select first by default
+        // Select the first image natively to populate the sidebar text/preview
         if (!library.isEmpty()) {
             setSelectedPreview(library.get(0).getFilePath());
         }
 
-        // --- Sidebar Shrink Binding ---
-        // Sacrifices right-panel width (max 450) if main area drastically decreases,
-        // prioritizing 450px minimum width for the strictly critical grid library.
+        // 3. Register geometric layout rules and action hooks
+        bindSidebarGeometry();
+        bindGridResponsiveEngine();
+        registerButtonActions();
+
+        // Boot the initial grid bounds safely
+        currentCols = DEFAULT_COLUMNS;
+        rebuildGridPane(currentCols);
+    }
+    
+    /**
+     * Binds the sidebar properties so it conditionally compresses to maintain maximum
+     * usable width for the primary photo database grid across smaller window sizes.
+     */
+    private void bindSidebarGeometry() {
         javafx.beans.binding.DoubleBinding dynamicRightPanelWidth = new javafx.beans.binding.DoubleBinding() {
             {
                 super.bind(mainSplitContainer.widthProperty());
@@ -101,88 +123,48 @@ public class DashboardController implements Initializable {
             @Override
             protected double computeValue() {
                 double totalWidth = mainSplitContainer.getWidth();
-                return Math.max(0, Math.min(450, totalWidth - 450));
+                return Math.max(0, Math.min(SIDEBAR_WIDTH_MAX, totalWidth - SIDEBAR_WIDTH_MAX));
             }
         };
 
         metadataSidebar.prefWidthProperty().bind(dynamicRightPanelWidth);
         metadataSidebar.minWidthProperty().bind(dynamicRightPanelWidth);
         metadataSidebar.maxWidthProperty().bind(dynamicRightPanelWidth);
-
         topRightActions.prefWidthProperty().bind(dynamicRightPanelWidth);
         topRightActions.minWidthProperty().bind(dynamicRightPanelWidth);
         topRightActions.maxWidthProperty().bind(dynamicRightPanelWidth);
-
-        // --- Fluid Restructure Layout Engine ---
+    }
+    
+    /**
+     * Attaches an aggressive listener to the grid scrollpane. It calculates the necessary
+     * column quantities dynamically by calculating internal window width against absolute margin padding,
+     * ensuring columns shift natively exactly like modern web FlexBox grid designs.
+     */
+    private void bindGridResponsiveEngine() {
         javafx.application.Platform.runLater(() -> {
             gridScrollPane.viewportBoundsProperty().addListener((obs, oldBounds, newBounds) -> {
                 double width = newBounds.getWidth();
-                if (width <= 20)
-                    return;
+                if (width <= 20) return;
 
-                double minThumbWidth = 200; // Optimal card width to trigger column collapses
                 double hgap = imageGrid.getHgap();
+                int calcCols = (int) ((width - 40 + hgap) / (GRID_CELL_MIN_WIDTH + hgap));
+                int cols = Math.max(1, Math.min(DEFAULT_COLUMNS, calcCols)); // Constrain grid columns
 
-                // Determine raw integer column count mapping
-                int calcCols = (int) ((width - 40 + hgap) / (minThumbWidth + hgap));
-                int cols = Math.max(1, Math.min(4, calcCols)); // Constrain to 4
-
-                // If the column layout shifted natively, reconstruct the grid safely
                 if (cols != currentCols) {
                     currentCols = cols;
                     rebuildGridPane(cols);
                 }
             });
         });
+    }
 
-        // Instantly force 4 columns on startup pipeline to murder the 5-column flash
-        // bug
-        currentCols = 4;
-        rebuildGridPane(4);
-
-        // Map Sync Action
-        syncMetadataBtn.setOnAction(e -> {
-            if (currentActiveCell != null && currentActiveFile != null) {
-                String text = annotationArea.getText();
-                boolean isEmpty = text == null || text.trim().isEmpty();
-
-                if (!isEmpty) {
-                    annotations.put(currentActiveFile, text);
-                    db.saveAnnotation(currentActiveFile, text);
-                    if (!hasHeartBadge(currentActiveCell)) {
-                        Label heartBadge = createHeartBadge();
-                        StackPane.setAlignment(heartBadge, javafx.geometry.Pos.TOP_LEFT);
-                        StackPane.setMargin(heartBadge, new javafx.geometry.Insets(0, 0, 0, 10)); // Adjusted inset
-
-                        if (!currentActiveCell.getChildren().isEmpty()
-                                && currentActiveCell.getChildren().get(0) instanceof StackPane) {
-                            ((StackPane) currentActiveCell.getChildren().get(0)).getChildren().add(heartBadge);
-                        } else {
-                            // Fallback
-                            currentActiveCell.getChildren().add(heartBadge);
-                        }
-                    }
-                } else {
-                    annotations.remove(currentActiveFile);
-                    db.deleteAnnotation(currentActiveFile);
-                    removeHeartBadge(currentActiveCell);
-                }
-            }
-        });
-
+    private void registerButtonActions() {
+        if (syncMetadataBtn != null) {
+            syncMetadataBtn.setOnAction(e -> handleSaveAnnotation());
+        }
+        
         if (removeMetadataBtn != null) {
-            removeMetadataBtn.setOnAction(e -> {
-                System.out.println("Clear Annotation Button triggered");
-                if (currentActiveCell != null && currentActiveFile != null) {
-                    annotationArea.setText("");
-                    annotations.remove(currentActiveFile);
-                    db.deleteAnnotation(currentActiveFile);
-                    removeHeartBadge(currentActiveCell);
-                    System.out.println("Purged text, removed from memory, deleted from DB, and detached badge for: " + currentActiveFile);
-                } else {
-                    System.out.println("Ignored clear because active cell or active file state is null.");
-                }
-            });
+            removeMetadataBtn.setOnAction(e -> handleClearAnnotation());
         }
 
         if (openFullscreenBtn != null) {
@@ -194,55 +176,14 @@ public class DashboardController implements Initializable {
         }
     }
 
-    private boolean hasHeartBadge(StackPane cell) {
-        if (cell == null || cell.getChildren().isEmpty())
-            return false;
-        if (cell.getChildren().get(0) instanceof StackPane) {
-            StackPane wrapper = (StackPane) cell.getChildren().get(0);
-            for (javafx.scene.Node n : wrapper.getChildren()) {
-                if (n instanceof Label && n.getStyleClass().contains("heart-badge")) {
-                    return true;
-                }
-            }
-        } else {
-            for (javafx.scene.Node n : cell.getChildren()) {
-                if (n instanceof Label && n.getStyleClass().contains("heart-badge"))
-                    return true;
-            }
-        }
-        return false;
-    }
-
-    private void removeHeartBadge(StackPane cell) {
-        if (cell == null || cell.getChildren().isEmpty()) return;
-        
-        if (cell.getChildren().get(0) instanceof StackPane) {
-            StackPane wrapper = (StackPane) cell.getChildren().get(0);
-            javafx.scene.Node toRemove = null;
-            for (javafx.scene.Node n : wrapper.getChildren()) {
-                if (n instanceof Label && n.getStyleClass().contains("heart-badge")) {
-                    toRemove = n;
-                    break;
-                }
-            }
-            if (toRemove != null) wrapper.getChildren().remove(toRemove);
-        } else {
-            javafx.scene.Node toRemove = null;
-            for (javafx.scene.Node n : cell.getChildren()) {
-                if (n instanceof Label && n.getStyleClass().contains("heart-badge")) {
-                    toRemove = n;
-                    break;
-                }
-            }
-            if (toRemove != null) cell.getChildren().remove(toRemove);
-        }
-    }
-
+    // =========================================================================
+    // UI UPDATERS & RENDERERS
+    // =========================================================================
+    
     private void rebuildGridPane(int cols) {
         imageGrid.getChildren().clear();
         imageGrid.getColumnConstraints().clear();
 
-        // Generate flexible evenly distributed columns
         for (int i = 0; i < cols; i++) {
             ColumnConstraints cc = new ColumnConstraints();
             cc.setPercentWidth(100.0 / cols);
@@ -250,46 +191,54 @@ public class DashboardController implements Initializable {
             imageGrid.getColumnConstraints().add(cc);
         }
 
-        // Re-inject the cached cells into the fresh grid bounds
-        for (int i = 0; i < allCells.size(); i++) {
-            StackPane cell = allCells.get(i);
-
-            // Fixed height logic
-            cell.setPrefHeight(190);
-            cell.setMinHeight(190);
-            cell.setMaxHeight(190);
+        for (int i = 0; i < cachedImageCells.size(); i++) {
+            StackPane cell = cachedImageCells.get(i);
+            
+            cell.setPrefHeight(GRID_CELL_HEIGHT);
+            cell.setMinHeight(GRID_CELL_HEIGHT);
+            cell.setMaxHeight(GRID_CELL_HEIGHT);
 
             javafx.scene.Node baseNode = cell.getChildren().get(0);
+            ImageView targetView = null;
 
             if (baseNode instanceof StackPane) {
                 StackPane wrapper = (StackPane) baseNode;
                 if (!wrapper.getChildren().isEmpty() && wrapper.getChildren().get(0) instanceof ImageView) {
-                    ImageView iv = (ImageView) wrapper.getChildren().get(0);
-                    // Sever old bindings to prevent cyclical geometry crashing
-                    iv.fitWidthProperty().unbind();
-                    iv.fitHeightProperty().unbind();
-
-                    // Tie dimensions safely to outermost viewport rather than unstable grid
-                    // internals
-                    iv.fitWidthProperty().bind(gridScrollPane.widthProperty()
-                            .subtract(imageGrid.getHgap() * (cols - 1) + 60)
-                            .divide(cols));
-
-                    iv.setFitHeight(180);
+                    targetView = (ImageView) wrapper.getChildren().get(0);
                 }
             } else if (baseNode instanceof ImageView) {
-                ImageView iv = (ImageView) baseNode;
-                iv.fitWidthProperty().unbind();
-                iv.fitHeightProperty().unbind();
-                iv.fitWidthProperty().bind(gridScrollPane.widthProperty()
+                targetView = (ImageView) baseNode;
+            }
+            
+            if (targetView != null) {
+                targetView.fitWidthProperty().unbind();
+                targetView.fitHeightProperty().unbind();
+
+                targetView.fitWidthProperty().bind(gridScrollPane.widthProperty()
                         .subtract(imageGrid.getHgap() * (cols - 1) + 60)
                         .divide(cols));
-                iv.setFitHeight(180);
+
+                targetView.setFitHeight(GRID_IMAGE_HEIGHT);
             }
 
             imageGrid.add(cell, i % cols, i / cols);
         }
     }
+
+    private void setSelectedPreview(String file) {
+        try {
+            File imgFile = new File(file);
+            if (imgFile.exists()) {
+                selectedImagePreview.setImage(new Image(imgFile.toURI().toString(), PREVIEW_RESAMPLE_SIZE, PREVIEW_RESAMPLE_SIZE, true, true));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // =========================================================================
+    // COMPONENT GENERATORS
+    // =========================================================================
 
     private void createUploadPromptCell() {
         StackPane cell = new StackPane();
@@ -319,8 +268,119 @@ public class DashboardController implements Initializable {
             }
         });
 
-        allCells.add(cell);
+        cachedImageCells.add(cell);
     }
+
+    private void createAndAddImageCell(ImageRecord record, int index) {
+        String file = record.getFilePath();
+        try {
+            File imgFile = new File(file);
+            if (!imgFile.exists()) return;
+
+            // Downsample memory load footprint & smooth pixel aliasing natively
+            Image img = new Image(imgFile.toURI().toString(), THUMBNAIL_RESAMPLE_SIZE, THUMBNAIL_RESAMPLE_SIZE, true, true);
+            ImageView imageView = new ImageView(img);
+            imageView.setPreserveRatio(true);
+
+            imageView.setFitWidth(FALLBACK_THUMBNAIL_WIDTH);
+            imageView.setFitHeight(FALLBACK_THUMBNAIL_HEIGHT);
+
+            StackPane imageWrapper = new StackPane(imageView);
+            imageWrapper.setMaxSize(javafx.scene.layout.Region.USE_PREF_SIZE, javafx.scene.layout.Region.USE_PREF_SIZE);
+
+            StackPane cell = new StackPane(imageWrapper);
+            cell.getStyleClass().add("image-cell");
+            cell.setFocusTraversable(true);
+
+            // Hover tooltip mapping
+            Label fileLabel = new Label(record.getFilename());
+            fileLabel.getStyleClass().add("grid-filename");
+            StackPane.setAlignment(fileLabel, javafx.geometry.Pos.BOTTOM_CENTER);
+            StackPane.setMargin(fileLabel, new javafx.geometry.Insets(0, 0, 15, 0));
+            fileLabel.setMouseTransparent(true);
+            fileLabel.visibleProperty().bind(cell.hoverProperty());
+            cell.getChildren().add(fileLabel);
+
+            // Check selection state bindings
+            if (index == 1) {
+                cell.getStyleClass().add("selected");
+                currentActiveCell = cell;
+                currentActiveFile = file;
+            }
+
+            // Bind current annotation database memory
+            String existingNotes = annotations.get(file);
+            if (existingNotes != null && !existingNotes.trim().isEmpty()) {
+                Label heartBadge = createHeartBadge();
+                StackPane.setAlignment(heartBadge, javafx.geometry.Pos.TOP_LEFT);
+                StackPane.setMargin(heartBadge, new javafx.geometry.Insets(0, 0, 0, 10));
+                imageWrapper.getChildren().add(heartBadge);
+            }
+
+            cell.setOnMouseClicked(event -> {
+                setSelectedPreview(file);
+                
+                for (StackPane c : cachedImageCells) {
+                    c.getStyleClass().remove("selected");
+                }
+                
+                cell.getStyleClass().add("selected");
+                cell.requestFocus();
+
+                currentActiveCell = cell;
+                currentActiveFile = file;
+                if (annotationArea != null) {
+                    annotationArea.setText(annotations.getOrDefault(file, ""));
+                }
+
+                if (event.getClickCount() == 2) {
+                    fetchAndOpenImageWindow(file);
+                }
+            });
+
+            cachedImageCells.add(cell);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    private void fetchAndOpenImageWindow(String filePath) {
+        try {
+            File imgFile = new File(filePath);
+            if (!imgFile.exists()) return;
+
+            Image fullImg = new Image(imgFile.toURI().toString());
+            ImageView fullView = new ImageView(fullImg);
+            fullView.setPreserveRatio(true);
+            fullView.setSmooth(true);
+
+            StackPane root = new StackPane(fullView);
+            root.setStyle("-fx-background-color: #0D0D0D;");
+
+            Scene scene = new Scene(root, FULL_VIEWER_WIDTH, FULL_VIEWER_HEIGHT);
+
+            fullView.fitWidthProperty().bind(scene.widthProperty());
+            fullView.fitHeightProperty().bind(scene.heightProperty());
+
+            Stage stage = new Stage();
+            stage.setTitle("Darkroom Atelier Viewer - " + imgFile.getName());
+            stage.setScene(scene);
+            stage.show();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private Label createHeartBadge() {
+        Label l = new Label("♥");
+        l.getStyleClass().add("heart-badge");
+        return l;
+    }
+
+    // =========================================================================
+    // DATA & STATE OPERATIONS
+    // =========================================================================
 
     private void importImageToLibrary(File sourceFile) {
         try {
@@ -333,13 +393,12 @@ public class DashboardController implements Initializable {
 
             Files.copy(sourceFile.toPath(), destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
-            ImageRecord record = new ImageRecord(0, destFile.getAbsolutePath(), destFile.getName(),
-                    System.currentTimeMillis());
+            ImageRecord record = new ImageRecord(0, destFile.getAbsolutePath(), destFile.getName(), System.currentTimeMillis());
             db.insertImageRecord(record);
 
-            createAndAddImageCell(record, allCells.size());
+            createAndAddImageCell(record, cachedImageCells.size());
 
-            int count = allCells.size() - 1;
+            int count = cachedImageCells.size() - 1;
             imageCountLabel.setText("Showing " + count + " items from recent import");
 
             rebuildGridPane(currentCols);
@@ -348,132 +407,82 @@ public class DashboardController implements Initializable {
         }
     }
 
-    private void createAndAddImageCell(ImageRecord record, int index) {
-        String file = record.getFilePath();
-        try {
-            File imgFile = new File(file);
-            if (!imgFile.exists())
-                return;
+    private void handleSaveAnnotation() {
+        if (currentActiveCell != null && currentActiveFile != null) {
+            String text = annotationArea.getText();
+            boolean isEmpty = text == null || text.trim().isEmpty();
 
-            // Load image using native resampling to 300px to strip out high-resolution aliasing noise, making thumbnails eye-pleasing
-            Image img = new Image(imgFile.toURI().toString(), 300, 300, true, true);
-            ImageView imageView = new ImageView(img);
-            imageView.setPreserveRatio(true); // Maintain original image ratio
+            if (!isEmpty) {
+                annotations.put(currentActiveFile, text);
+                db.saveAnnotation(currentActiveFile, text);
+                if (!hasHeartBadge(currentActiveCell)) {
+                    Label heartBadge = createHeartBadge();
+                    StackPane.setAlignment(heartBadge, javafx.geometry.Pos.TOP_LEFT);
+                    StackPane.setMargin(heartBadge, new javafx.geometry.Insets(0, 0, 0, 10));
 
-            // Bind image scaling natively to scroll pane container width to prevent layout
-            // overflow loops.
-            // Provide a strict initial fallback size. This prevents the geometry engine
-            // from
-            // defaulting to the raw image size (1024px) for a split-second before runLater
-            // fires.
-            imageView.setFitWidth(250);
-            imageView.setFitHeight(187.5);
-
-            StackPane imageWrapper = new StackPane(imageView);
-            imageWrapper.setMaxSize(javafx.scene.layout.Region.USE_PREF_SIZE, javafx.scene.layout.Region.USE_PREF_SIZE);
-
-            StackPane cell = new StackPane(imageWrapper);
-            cell.getStyleClass().add("image-cell");
-            cell.setFocusTraversable(true);
-
-            // Filename hover label for all cells
-            Label fileLabel = new Label(record.getFilename());
-            fileLabel.getStyleClass().add("grid-filename");
-            StackPane.setAlignment(fileLabel, javafx.geometry.Pos.BOTTOM_CENTER);
-            StackPane.setMargin(fileLabel, new javafx.geometry.Insets(0, 0, 15, 0));
-            fileLabel.setMouseTransparent(true);
-            fileLabel.visibleProperty().bind(cell.hoverProperty());
-            cell.getChildren().add(fileLabel);
-
-            // Initial visual state
-            if (index == 1) {
-                cell.getStyleClass().add("selected");
-                currentActiveCell = cell;
-                currentActiveFile = file;
+                    if (!currentActiveCell.getChildren().isEmpty() && currentActiveCell.getChildren().get(0) instanceof StackPane) {
+                        ((StackPane) currentActiveCell.getChildren().get(0)).getChildren().add(heartBadge);
+                    } else {
+                        currentActiveCell.getChildren().add(heartBadge);
+                    }
+                }
+            } else {
+                handleClearAnnotation();
             }
-
-            // Sync visual annotation heart presence on boot
-            String existingNotes = annotations.get(file);
-            if (existingNotes != null && !existingNotes.trim().isEmpty()) {
-                Label heartBadge = createHeartBadge();
-                StackPane.setAlignment(heartBadge, javafx.geometry.Pos.TOP_LEFT);
-                StackPane.setMargin(heartBadge, new javafx.geometry.Insets(0, 0, 0, 10)); // Adjusted inset
-                imageWrapper.getChildren().add(heartBadge);
-            }
-
-            cell.setOnMouseClicked(event -> {
-                setSelectedPreview(file);
-                // Remove 'selected' class from all cells
-                for (StackPane c : allCells) {
-                    c.getStyleClass().remove("selected");
-                }
-                // Apply 'selected' class to the clicked cell
-                cell.getStyleClass().add("selected");
-                cell.requestFocus();
-
-                // Track state and reload annotation map
-                currentActiveCell = cell;
-                currentActiveFile = file;
-                if (annotationArea != null) {
-                    annotationArea.setText(annotations.getOrDefault(file, ""));
-                }
-
-                if (event.getClickCount() == 2) {
-                    fetchAndOpenImageWindow(file);
-                }
-            });
-
-            // Push into memory rather than directly injecting
-            allCells.add(cell);
-
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 
-    private Label createHeartBadge() {
-        Label l = new Label("♥");
-        l.getStyleClass().add("heart-badge");
-        return l;
-    }
-
-    private void setSelectedPreview(String file) {
-        try {
-            File imgFile = new File(file);
-            if (imgFile.exists()) {
-                // Pre-scale the right sidebar to 500px natively to prevent downsampling artifact crunching
-                selectedImagePreview.setImage(new Image(imgFile.toURI().toString(), 500, 500, true, true));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+    private void handleClearAnnotation() {
+        System.out.println("Clear Annotation Button triggered");
+        if (currentActiveCell != null && currentActiveFile != null) {
+            annotationArea.setText("");
+            annotations.remove(currentActiveFile);
+            db.deleteAnnotation(currentActiveFile);
+            removeHeartBadge(currentActiveCell);
+            System.out.println("Purged text, removed from memory, deleted from DB, and detached badge for: " + currentActiveFile);
+        } else {
+            System.out.println("Ignored clear because active cell or active file state is null.");
         }
     }
 
-    private void fetchAndOpenImageWindow(String filePath) {
-        try {
-            File imgFile = new File(filePath);
-            if (!imgFile.exists())
-                return;
+    private boolean hasHeartBadge(StackPane cell) {
+        if (cell == null || cell.getChildren().isEmpty()) return false;
+        
+        if (cell.getChildren().get(0) instanceof StackPane) {
+            StackPane wrapper = (StackPane) cell.getChildren().get(0);
+            for (javafx.scene.Node n : wrapper.getChildren()) {
+                if (n instanceof Label && n.getStyleClass().contains("heart-badge")) return true;
+            }
+        } else {
+            for (javafx.scene.Node n : cell.getChildren()) {
+                if (n instanceof Label && n.getStyleClass().contains("heart-badge")) return true;
+            }
+        }
+        return false;
+    }
 
-            Image fullImg = new Image(imgFile.toURI().toString());
-            ImageView fullView = new ImageView(fullImg);
-            fullView.setPreserveRatio(true);
-            fullView.setSmooth(true);
-
-            StackPane root = new StackPane(fullView);
-            root.setStyle("-fx-background-color: #0D0D0D;");
-
-            Scene scene = new Scene(root, 1024, 768);
-
-            fullView.fitWidthProperty().bind(scene.widthProperty());
-            fullView.fitHeightProperty().bind(scene.heightProperty());
-
-            Stage stage = new Stage();
-            stage.setTitle("Darkroom Atelier Viewer - " + imgFile.getName());
-            stage.setScene(scene);
-            stage.show();
-        } catch (Exception ex) {
-            ex.printStackTrace();
+    private void removeHeartBadge(StackPane cell) {
+        if (cell == null || cell.getChildren().isEmpty()) return;
+        
+        if (cell.getChildren().get(0) instanceof StackPane) {
+            StackPane wrapper = (StackPane) cell.getChildren().get(0);
+            javafx.scene.Node toRemove = null;
+            for (javafx.scene.Node n : wrapper.getChildren()) {
+                if (n instanceof Label && n.getStyleClass().contains("heart-badge")) {
+                    toRemove = n;
+                    break;
+                }
+            }
+            if (toRemove != null) wrapper.getChildren().remove(toRemove);
+        } else {
+            javafx.scene.Node toRemove = null;
+            for (javafx.scene.Node n : cell.getChildren()) {
+                if (n instanceof Label && n.getStyleClass().contains("heart-badge")) {
+                    toRemove = n;
+                    break;
+                }
+            }
+            if (toRemove != null) cell.getChildren().remove(toRemove);
         }
     }
 }
