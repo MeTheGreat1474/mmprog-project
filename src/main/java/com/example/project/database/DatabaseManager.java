@@ -132,6 +132,17 @@ public class DatabaseManager {
         }
     }
 
+    public void deleteImageRecord(String filePath) {
+        String sql = "DELETE FROM images WHERE file_path = ?";
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, filePath);
+            pstmt.executeUpdate();
+        } catch (Exception e) {
+            System.out.println("Delete image failed: " + e.getMessage());
+        }
+    }
+
     public Map<String, String> loadAllAnnotations() {
         Map<String, String> map = new HashMap<>();
         String sql = "SELECT file_path, notes FROM annotations";
@@ -145,5 +156,26 @@ public class DatabaseManager {
             System.out.println("Load notes failed: " + e.getMessage());
         }
         return map;
+    }
+
+    public void updateImageFilePath(String oldPath, String newPath, String newFilename) {
+        String sqlImages = "UPDATE images SET file_path = ?, filename = ? WHERE file_path = ?";
+        String sqlAnnotations = "UPDATE annotations SET file_path = ? WHERE file_path = ?";
+        try (Connection conn = connect();
+             PreparedStatement pstmtImages = conn.prepareStatement(sqlImages);
+             PreparedStatement pstmtAnnotations = conn.prepareStatement(sqlAnnotations)) {
+             
+             pstmtImages.setString(1, newPath);
+             pstmtImages.setString(2, newFilename);
+             pstmtImages.setString(3, oldPath);
+             pstmtImages.executeUpdate();
+             
+             pstmtAnnotations.setString(1, newPath);
+             pstmtAnnotations.setString(2, oldPath);
+             pstmtAnnotations.executeUpdate();
+             
+        } catch (Exception e) {
+            System.out.println("Update file path failed: " + e.getMessage());
+        }
     }
 }

@@ -64,6 +64,29 @@ public class DashboardController implements Initializable {
     @FXML private javafx.scene.control.Button syncMetadataBtn;
     @FXML private javafx.scene.control.Button removeMetadataBtn;
     @FXML private javafx.scene.control.Button openFullscreenBtn;
+    @FXML private javafx.scene.control.Button deleteImageBtn;
+
+    @FXML private javafx.scene.control.MenuButton filterBtn;
+    @FXML private javafx.scene.control.CheckBox filterHasAnnotation;
+    @FXML private javafx.scene.control.CheckBox filterTypePNG;
+    @FXML private javafx.scene.control.CheckBox filterTypeJPEG;
+    @FXML private javafx.scene.control.CheckBox filterTypeRAW;
+
+    @FXML private javafx.scene.control.SplitMenuButton sortBtn;
+    @FXML private javafx.scene.control.MenuItem menuSortCreated;
+    @FXML private javafx.scene.control.MenuItem menuSortModified;
+
+    @FXML private javafx.scene.control.TextField metaName;
+    @FXML private Label metaFormat;
+    @FXML private Label metaSize;
+    @FXML private Label metaDimensions;
+    @FXML private Label metaDateCreated;
+    @FXML private Label metaDateModified;
+    @FXML private Label metaIso;
+    @FXML private Label metaAperture;
+    @FXML private Label metaShutter;
+    @FXML private Label metaFocalLength;
+    @FXML private Label metaLens;
 
     // =========================================================================
     // INTERNAL STATE VARIABLES
@@ -71,6 +94,8 @@ public class DashboardController implements Initializable {
     
     private java.util.List<StackPane> cachedImageCells = new java.util.ArrayList<>();
     private int currentCols = -1;
+    private boolean sortAscending = true;
+    private String sortCriteria = "CREATED";
     private java.util.Map<String, String> annotations;
     private StackPane currentActiveCell = null;
     private String currentActiveFile = null;
@@ -107,7 +132,8 @@ public class DashboardController implements Initializable {
 
         // Boot the initial grid bounds safely
         currentCols = DEFAULT_COLUMNS;
-        rebuildGridPane(currentCols);
+        updateSortButtonText();
+        renderGrid();
     }
     
     /**
@@ -152,7 +178,7 @@ public class DashboardController implements Initializable {
 
                 if (cols != currentCols) {
                     currentCols = cols;
-                    rebuildGridPane(cols);
+                    renderGrid();
                 }
             });
         });
@@ -167,6 +193,10 @@ public class DashboardController implements Initializable {
             removeMetadataBtn.setOnAction(e -> handleClearAnnotation());
         }
 
+        if (deleteImageBtn != null) {
+            deleteImageBtn.setOnAction(e -> handleDeleteImage());
+        }
+
         if (openFullscreenBtn != null) {
             openFullscreenBtn.setOnAction(e -> {
                 if (currentActiveFile != null) {
@@ -174,13 +204,126 @@ public class DashboardController implements Initializable {
                 }
             });
         }
+
+        if (metaName != null) {
+            metaName.setOnAction(e -> handleRenameImage());
+            metaName.focusedProperty().addListener((obs, oldVal, newVal) -> {
+                if (!newVal) {
+                    handleRenameImage();
+                }
+            });
+        }
+
+        if (sortBtn != null) {
+            sortBtn.setOnAction(e -> {
+                sortAscending = !sortAscending;
+                updateSortButtonText();
+                renderGrid();
+            });
+            if (menuSortCreated != null) {
+                menuSortCreated.setOnAction(e -> {
+                    sortCriteria = "CREATED";
+                    updateSortButtonText();
+                    renderGrid();
+                });
+            }
+            if (menuSortModified != null) {
+                menuSortModified.setOnAction(e -> {
+                    sortCriteria = "MODIFIED";
+                    updateSortButtonText();
+                    renderGrid();
+                });
+            }
+        }
+        
+        if (filterHasAnnotation != null) filterHasAnnotation.setOnAction(e -> renderGrid());
+        if (filterTypePNG != null) filterTypePNG.setOnAction(e -> renderGrid());
+        if (filterTypeJPEG != null) filterTypeJPEG.setOnAction(e -> renderGrid());
+        if (filterTypeRAW != null) filterTypeRAW.setOnAction(e -> renderGrid());
     }
 
     // =========================================================================
     // UI UPDATERS & RENDERERS
     // =========================================================================
     
-    private void rebuildGridPane(int cols) {
+    private void updateSortButtonText() {
+        if (sortBtn == null) return;
+        String dir = sortAscending ? "↑" : "↓";
+        String criteriaStr = sortCriteria.equals("CREATED") ? "Date Created" : "Date Modified";
+        sortBtn.setText(criteriaStr + " " + dir);
+    }
+
+    private void renderGrid() {
+        if (cachedImageCells.isEmpty()) return;
+        if (cachedImageCells.size() == 1) {
+            if (currentCols > 0) rebuildGridPane(currentCols, cachedImageCells);
+            return;
+        }
+        
+        StackPane uploadCell = cachedImageCells.get(0);
+        java.util.List<StackPane> cellsToProcess = new java.util.ArrayList<>(cachedImageCells.subList(1, cachedImageCells.size()));
+        
+        // 1. Filter
+        boolean checkAnn = filterHasAnnotation != null && filterHasAnnotation.isSelected();
+        boolean checkPng = filterTypePNG != null && filterTypePNG.isSelected();
+        boolean checkJpeg = filterTypeJPEG != null && filterTypeJPEG.isSelected();
+        boolean checkRaw = filterTypeRAW != null && filterTypeRAW.isSelected();
+        boolean anyTypeFilter = checkPng || checkJpeg || checkRaw;
+        
+        java.util.List<StackPane> filteredCells = new java.util.ArrayList<>();
+        for (StackPane cell : cellsToProcess) {
+            String file = (String) cell.getUserData();
+            if (file == null) continue;
+            
+            // Annotation Filter
+            if (checkAnn) {
+                boolean hasAnn = annotations != null && annotations.containsKey(file) && !annotations.get(file).trim().isEmpty();
+                if (!hasAnn) continue;
+            }
+            
+            // Type Filter
+            if (anyTypeFilter) {
+                String lower = file.toLowerCase();
+                boolean isPng = lower.endsWith(".png");
+                boolean isJpeg = lower.endsWith(".jpg") || lower.endsWith(".jpeg");
+                boolean isRaw = lower.endsWith(".nef") || lower.endsWith(".cr2") || lower.endsWith(".arw");
+                if (!( (checkPng && isPng) || (checkJpeg && isJpeg) || (checkRaw && isRaw) )) {
+                    continue;
+                }
+            }
+            
+            filteredCells.add(cell);
+        }
+        
+        // 2. Sort
+        filteredCells.sort((cellA, cellB) -> {
+            String fileA = (String) cellA.getUserData();
+            String fileB = (String) cellB.getUserData();
+            if (fileA == null || fileB == null) return 0;
+            try {
+                java.nio.file.attribute.BasicFileAttributes attrA = Files.readAttributes(new File(fileA).toPath(), java.nio.file.attribute.BasicFileAttributes.class);
+                java.nio.file.attribute.BasicFileAttributes attrB = Files.readAttributes(new File(fileB).toPath(), java.nio.file.attribute.BasicFileAttributes.class);
+                
+                long timeA = sortCriteria.equals("CREATED") ? attrA.creationTime().toMillis() : attrA.lastModifiedTime().toMillis();
+                long timeB = sortCriteria.equals("CREATED") ? attrB.creationTime().toMillis() : attrB.lastModifiedTime().toMillis();
+                
+                return sortAscending ? Long.compare(timeA, timeB) : Long.compare(timeB, timeA);
+            } catch (Exception e) {
+                return 0;
+            }
+        });
+        
+        // 3. Layout
+        java.util.List<StackPane> finalCells = new java.util.ArrayList<>();
+        finalCells.add(uploadCell);
+        finalCells.addAll(filteredCells);
+        
+        if (currentCols > 0) {
+            rebuildGridPane(currentCols, finalCells);
+        }
+    }
+
+    private void rebuildGridPane(int cols, java.util.List<StackPane> cellsToRender) {
         imageGrid.getChildren().clear();
         imageGrid.getColumnConstraints().clear();
 
@@ -191,8 +334,8 @@ public class DashboardController implements Initializable {
             imageGrid.getColumnConstraints().add(cc);
         }
 
-        for (int i = 0; i < cachedImageCells.size(); i++) {
-            StackPane cell = cachedImageCells.get(i);
+        for (int i = 0; i < cellsToRender.size(); i++) {
+            StackPane cell = cellsToRender.get(i);
             
             cell.setPrefHeight(GRID_CELL_HEIGHT);
             cell.setMinHeight(GRID_CELL_HEIGHT);
@@ -230,7 +373,119 @@ public class DashboardController implements Initializable {
             File imgFile = new File(file);
             if (imgFile.exists()) {
                 selectedImagePreview.setImage(new Image(imgFile.toURI().toString(), PREVIEW_RESAMPLE_SIZE, PREVIEW_RESAMPLE_SIZE, true, true));
+                updateMetadataPanel(file);
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void updateMetadataPanel(String file) {
+        try {
+            File imgFile = new File(file);
+            if (!imgFile.exists()) return;
+
+            if (metaName != null) metaName.setText(imgFile.getName());
+            
+            if (metaFormat != null) {
+                String nameLower = imgFile.getName().toLowerCase();
+                String format = "Unknown";
+                if (nameLower.endsWith(".png")) format = "PNG";
+                else if (nameLower.endsWith(".jpg") || nameLower.endsWith(".jpeg")) format = "JPEG";
+                else if (nameLower.endsWith(".nef")) format = "RAW (NEF)";
+                metaFormat.setText(format);
+            }
+
+            if (metaSize != null) {
+                long bytes = imgFile.length();
+                double mb = bytes / (1024.0 * 1024.0);
+                metaSize.setText(String.format("%.1f MB", mb));
+            }
+
+            if (metaDimensions != null) metaDimensions.setText("-");
+            if (metaDateCreated != null) metaDateCreated.setText("-");
+            if (metaDateModified != null) metaDateModified.setText("-");
+            if (metaIso != null) metaIso.setText("-");
+            if (metaAperture != null) metaAperture.setText("-");
+            if (metaShutter != null) metaShutter.setText("-");
+            if (metaFocalLength != null) metaFocalLength.setText("-");
+            if (metaLens != null) metaLens.setText("-");
+
+            try {
+                java.nio.file.attribute.BasicFileAttributes attr = Files.readAttributes(imgFile.toPath(), java.nio.file.attribute.BasicFileAttributes.class);
+                java.time.format.DateTimeFormatter dtf = java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm");
+                if (metaDateCreated != null) {
+                    metaDateCreated.setText(dtf.format(java.time.LocalDateTime.ofInstant(attr.creationTime().toInstant(), java.time.ZoneId.systemDefault())));
+                }
+                if (metaDateModified != null) {
+                    metaDateModified.setText(dtf.format(java.time.LocalDateTime.ofInstant(attr.lastModifiedTime().toInstant(), java.time.ZoneId.systemDefault())));
+                }
+            } catch (Exception e) {
+                System.out.println("Could not read file dates: " + e.getMessage());
+            }
+
+            try {
+                com.drew.metadata.Metadata metadata = com.drew.imaging.ImageMetadataReader.readMetadata(imgFile);
+                
+                com.drew.metadata.exif.ExifSubIFDDirectory directory = metadata.getFirstDirectoryOfType(com.drew.metadata.exif.ExifSubIFDDirectory.class);
+                if (directory != null) {
+                    if (metaIso != null && directory.containsTag(com.drew.metadata.exif.ExifSubIFDDirectory.TAG_ISO_EQUIVALENT)) {
+                        metaIso.setText(directory.getString(com.drew.metadata.exif.ExifSubIFDDirectory.TAG_ISO_EQUIVALENT));
+                    }
+                    if (metaAperture != null && directory.containsTag(com.drew.metadata.exif.ExifSubIFDDirectory.TAG_FNUMBER)) {
+                        metaAperture.setText("f/" + directory.getString(com.drew.metadata.exif.ExifSubIFDDirectory.TAG_FNUMBER));
+                    }
+                    if (metaShutter != null && directory.containsTag(com.drew.metadata.exif.ExifSubIFDDirectory.TAG_EXPOSURE_TIME)) {
+                        String shutter = directory.getString(com.drew.metadata.exif.ExifSubIFDDirectory.TAG_EXPOSURE_TIME);
+                        if (shutter != null) {
+                            if (shutter.contains(".")) {
+                                double s = Double.parseDouble(shutter);
+                                if (s < 1) shutter = "1/" + Math.round(1/s) + "s";
+                                else shutter = s + "s";
+                            } else {
+                                shutter += "s";
+                            }
+                        }
+                        metaShutter.setText(shutter);
+                    }
+                    if (metaFocalLength != null && directory.containsTag(com.drew.metadata.exif.ExifSubIFDDirectory.TAG_FOCAL_LENGTH)) {
+                        metaFocalLength.setText(directory.getString(com.drew.metadata.exif.ExifSubIFDDirectory.TAG_FOCAL_LENGTH) + "mm");
+                    }
+                    if (metaLens != null && directory.containsTag(com.drew.metadata.exif.ExifSubIFDDirectory.TAG_LENS_MODEL)) {
+                        metaLens.setText(directory.getString(com.drew.metadata.exif.ExifSubIFDDirectory.TAG_LENS_MODEL));
+                    }
+                }
+                
+                int width = 0;
+                int height = 0;
+                
+                com.drew.metadata.exif.ExifIFD0Directory ifd0Dir = metadata.getFirstDirectoryOfType(com.drew.metadata.exif.ExifIFD0Directory.class);
+                if (ifd0Dir != null && ifd0Dir.containsTag(com.drew.metadata.exif.ExifIFD0Directory.TAG_IMAGE_WIDTH)) {
+                    width = ifd0Dir.getInt(com.drew.metadata.exif.ExifIFD0Directory.TAG_IMAGE_WIDTH);
+                    height = ifd0Dir.getInt(com.drew.metadata.exif.ExifIFD0Directory.TAG_IMAGE_HEIGHT);
+                } else {
+                    com.drew.metadata.jpeg.JpegDirectory jpegDir = metadata.getFirstDirectoryOfType(com.drew.metadata.jpeg.JpegDirectory.class);
+                    if (jpegDir != null) {
+                        width = jpegDir.getImageWidth();
+                        height = jpegDir.getImageHeight();
+                    } else {
+                        com.drew.metadata.png.PngDirectory pngDir = metadata.getFirstDirectoryOfType(com.drew.metadata.png.PngDirectory.class);
+                        if (pngDir != null) {
+                            if (pngDir.containsTag(com.drew.metadata.png.PngDirectory.TAG_IMAGE_WIDTH)) {
+                                width = pngDir.getInt(com.drew.metadata.png.PngDirectory.TAG_IMAGE_WIDTH);
+                                height = pngDir.getInt(com.drew.metadata.png.PngDirectory.TAG_IMAGE_HEIGHT);
+                            }
+                        }
+                    }
+                }
+                if (width > 0 && height > 0 && metaDimensions != null) {
+                    metaDimensions.setText(width + " × " + height);
+                }
+
+            } catch (Exception ex) {
+                System.out.println("Could not read metadata for " + file + ": " + ex.getMessage());
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -266,6 +521,39 @@ public class DashboardController implements Initializable {
             if (selectedFile != null) {
                 importImageToLibrary(selectedFile);
             }
+        });
+
+        cell.setOnDragOver(event -> {
+            if (event.getGestureSource() != cell && event.getDragboard().hasFiles()) {
+                boolean hasImage = false;
+                for (File file : event.getDragboard().getFiles()) {
+                    String name = file.getName().toLowerCase();
+                    if (name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".nef")) {
+                        hasImage = true;
+                        break;
+                    }
+                }
+                if (hasImage) {
+                    event.acceptTransferModes(javafx.scene.input.TransferMode.COPY_OR_MOVE);
+                }
+            }
+            event.consume();
+        });
+
+        cell.setOnDragDropped(event -> {
+            javafx.scene.input.Dragboard dragboard = event.getDragboard();
+            boolean success = false;
+            if (dragboard.hasFiles()) {
+                for (File file : dragboard.getFiles()) {
+                    String name = file.getName().toLowerCase();
+                    if (name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".nef")) {
+                        importImageToLibrary(file);
+                        success = true;
+                    }
+                }
+            }
+            event.setDropCompleted(success);
+            event.consume();
         });
 
         cachedImageCells.add(cell);
@@ -317,8 +605,10 @@ public class DashboardController implements Initializable {
                 imageWrapper.getChildren().add(heartBadge);
             }
 
+            cell.setUserData(file);
             cell.setOnMouseClicked(event -> {
-                setSelectedPreview(file);
+                String currentFile = (String) cell.getUserData();
+                setSelectedPreview(currentFile);
                 
                 for (StackPane c : cachedImageCells) {
                     c.getStyleClass().remove("selected");
@@ -328,13 +618,13 @@ public class DashboardController implements Initializable {
                 cell.requestFocus();
 
                 currentActiveCell = cell;
-                currentActiveFile = file;
+                currentActiveFile = currentFile;
                 if (annotationArea != null) {
-                    annotationArea.setText(annotations.getOrDefault(file, ""));
+                    annotationArea.setText(annotations.getOrDefault(currentFile, ""));
                 }
 
                 if (event.getClickCount() == 2) {
-                    fetchAndOpenImageWindow(file);
+                    fetchAndOpenImageWindow(currentFile);
                 }
             });
 
@@ -398,10 +688,10 @@ public class DashboardController implements Initializable {
 
             createAndAddImageCell(record, cachedImageCells.size());
 
-            int count = cachedImageCells.size() - 1;
+            int count = cachedImageCells.size() - 1; // account for upload cell
             imageCountLabel.setText("Showing " + count + " items from recent import");
 
-            rebuildGridPane(currentCols);
+            renderGrid();
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -445,6 +735,65 @@ public class DashboardController implements Initializable {
         }
     }
 
+    private void handleRenameImage() {
+        if (currentActiveFile == null || currentActiveCell == null) return;
+        String newName = metaName.getText().trim();
+        File oldFile = new File(currentActiveFile);
+        
+        if (newName.isEmpty() || newName.equals(oldFile.getName())) {
+            metaName.setText(oldFile.getName());
+            return;
+        }
+        
+        // ensure extension is maintained
+        String oldName = oldFile.getName();
+        int dotIdx = oldName.lastIndexOf('.');
+        String ext = dotIdx != -1 ? oldName.substring(dotIdx) : "";
+        
+        if (!newName.toLowerCase().endsWith(ext.toLowerCase())) {
+            newName += ext;
+        }
+
+        File newFile = new File(oldFile.getParent(), newName);
+        if (newFile.exists()) {
+            System.out.println("File already exists");
+            metaName.setText(oldName);
+            return;
+        }
+
+        if (oldFile.renameTo(newFile)) {
+            db.updateImageFilePath(currentActiveFile, newFile.getAbsolutePath(), newName);
+            
+            // update annotations map
+            if (annotations.containsKey(currentActiveFile)) {
+                annotations.put(newFile.getAbsolutePath(), annotations.remove(currentActiveFile));
+            }
+            
+            // update UI label
+            if (!currentActiveCell.getChildren().isEmpty()) {
+                javafx.scene.Node baseNode = currentActiveCell.getChildren().get(currentActiveCell.getChildren().size() - 1);
+                if (baseNode instanceof Label && baseNode.getStyleClass().contains("grid-filename")) {
+                    ((Label) baseNode).setText(newName);
+                } else {
+                    for (javafx.scene.Node n : currentActiveCell.getChildren()) {
+                        if (n instanceof Label && n.getStyleClass().contains("grid-filename")) {
+                            ((Label) n).setText(newName);
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            currentActiveFile = newFile.getAbsolutePath();
+            currentActiveCell.setUserData(currentActiveFile);
+            metaName.setText(newName);
+            
+        } else {
+            System.out.println("Failed to rename file");
+            metaName.setText(oldName);
+        }
+    }
+
     private boolean hasHeartBadge(StackPane cell) {
         if (cell == null || cell.getChildren().isEmpty()) return false;
         
@@ -483,6 +832,65 @@ public class DashboardController implements Initializable {
                 }
             }
             if (toRemove != null) cell.getChildren().remove(toRemove);
+        }
+    }
+
+    private void handleDeleteImage() {
+        if (currentActiveFile == null || currentActiveCell == null) return;
+        
+        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Delete Image");
+        alert.setHeaderText("Remove Image Completely");
+        alert.setContentText("Are you sure you want to permanently delete this image from your library and disk?");
+        
+        java.util.Optional<javafx.scene.control.ButtonType> result = alert.showAndWait();
+        if (result.isPresent() && result.get() == javafx.scene.control.ButtonType.OK) {
+            File file = new File(currentActiveFile);
+            if (file.exists()) file.delete();
+            
+            db.deleteImageRecord(currentActiveFile);
+            db.deleteAnnotation(currentActiveFile);
+            annotations.remove(currentActiveFile);
+            
+            cachedImageCells.remove(currentActiveCell);
+            
+            int count = cachedImageCells.size() - 1;
+            imageCountLabel.setText("Showing " + count + " items from recent import");
+            
+            if (cachedImageCells.size() > 1) {
+                StackPane nextCell = cachedImageCells.get(1); // Index 0 is the upload prompt
+                String nextFile = (String) nextCell.getUserData();
+                setSelectedPreview(nextFile);
+                
+                for (StackPane c : cachedImageCells) {
+                    c.getStyleClass().remove("selected");
+                }
+                nextCell.getStyleClass().add("selected");
+                
+                currentActiveCell = nextCell;
+                currentActiveFile = nextFile;
+                if (annotationArea != null) {
+                    annotationArea.setText(annotations.getOrDefault(currentActiveFile, ""));
+                }
+            } else {
+                currentActiveCell = null;
+                currentActiveFile = null;
+                selectedImagePreview.setImage(null);
+                if (annotationArea != null) annotationArea.setText("");
+                if (metaName != null) metaName.setText("-");
+                if (metaFormat != null) metaFormat.setText("-");
+                if (metaSize != null) metaSize.setText("-");
+                if (metaDimensions != null) metaDimensions.setText("-");
+                if (metaDateCreated != null) metaDateCreated.setText("-");
+                if (metaDateModified != null) metaDateModified.setText("-");
+                if (metaIso != null) metaIso.setText("-");
+                if (metaAperture != null) metaAperture.setText("-");
+                if (metaShutter != null) metaShutter.setText("-");
+                if (metaFocalLength != null) metaFocalLength.setText("-");
+                if (metaLens != null) metaLens.setText("-");
+            }
+            
+            renderGrid();
         }
     }
 }

@@ -17,18 +17,17 @@
             <padding>
                 <Insets top="30" right="20" bottom="30" left="20"/>
             </padding>
-            <Label text="Darkroom Atelier" styleClass="logo-text">
+            <HBox alignment="CENTER_LEFT" spacing="20">
                 <VBox.margin>
-                    <Insets bottom="40"/>
+                    <Insets bottom="50"/>
                 </VBox.margin>
-            </Label>
-            
-            <Label text="LIBRARY" styleClass="section-label"/>
-            <Label text="Creative Suite" styleClass="section-title">
-                 <VBox.margin>
-                    <Insets bottom="20"/>
-                </VBox.margin>
-            </Label>
+                <ImageView fitHeight="48" fitWidth="48" preserveRatio="true">
+                    <image>
+                        <Image url="@../images/app_icon.png"/>
+                    </image>
+                </ImageView>
+                <Label text="Atelier" styleClass="logo-text"/>
+            </HBox>
             
             <!-- Primary Navigation Links -->
             <VBox spacing="8">
@@ -91,7 +90,7 @@
                             <top>
                                 <VBox spacing="5">
                                     <BorderPane.margin>
-                                        <Insets bottom="20"/>
+                                        <Insets bottom="40"/>
                                     </BorderPane.margin>
                                     <HBox alignment="CENTER_LEFT">
                                         <Label text="Raw Captures" styleClass="headline-text"/>
@@ -99,8 +98,37 @@
                                     <HBox alignment="CENTER_LEFT" spacing="10">
                                         <Label fx:id="imageCountLabel" text="Showing 0 items from recent import" styleClass="subtitle-text"/>
                                         <Region HBox.hgrow="ALWAYS" />
-                                        <Button text="≡ Filter" styleClass="btn-filter"/>
-                                        <Button text="≡ Date Added" styleClass="btn-filter"/>
+                                        <MenuButton fx:id="filterBtn" text="≡ Filter" styleClass="btn-filter">
+                                            <items>
+                                                <CustomMenuItem hideOnClick="false">
+                                                    <content>
+                                                        <CheckBox fx:id="filterHasAnnotation" text="Has Annotation" styleClass="menu-checkbox"/>
+                                                    </content>
+                                                </CustomMenuItem>
+                                                <SeparatorMenuItem />
+                                                <CustomMenuItem hideOnClick="false">
+                                                    <content>
+                                                        <CheckBox fx:id="filterTypePNG" text="PNG Images" styleClass="menu-checkbox"/>
+                                                    </content>
+                                                </CustomMenuItem>
+                                                <CustomMenuItem hideOnClick="false">
+                                                    <content>
+                                                        <CheckBox fx:id="filterTypeJPEG" text="JPEG Images" styleClass="menu-checkbox"/>
+                                                    </content>
+                                                </CustomMenuItem>
+                                                <CustomMenuItem hideOnClick="false">
+                                                    <content>
+                                                        <CheckBox fx:id="filterTypeRAW" text="RAW (NEF) Images" styleClass="menu-checkbox"/>
+                                                    </content>
+                                                </CustomMenuItem>
+                                            </items>
+                                        </MenuButton>
+                                        <SplitMenuButton fx:id="sortBtn" text="Date Created ↑" styleClass="btn-filter">
+                                            <items>
+                                                <MenuItem fx:id="menuSortCreated" text="Date Created"/>
+                                                <MenuItem fx:id="menuSortModified" text="Date Modified"/>
+                                            </items>
+                                        </SplitMenuButton>
                                     </HBox>
                                 </VBox>
                             </top>
@@ -140,16 +168,22 @@
                                     <Label text="FILE DETAILS" styleClass="section-label-blue"/>
                                     <GridPane hgap="10" vgap="8">
                                         <Label text="Name" GridPane.columnIndex="0" GridPane.rowIndex="0" styleClass="prop-label"/>
-                                        <Label text="DSC_0492.NEF" GridPane.columnIndex="1" GridPane.rowIndex="0" styleClass="prop-value" GridPane.halignment="RIGHT"/>
+                                        <TextField fx:id="metaName" text="-" GridPane.columnIndex="1" GridPane.rowIndex="0" styleClass="prop-value, editable-name-field" alignment="CENTER_RIGHT" maxWidth="140"/>
                                         
                                         <Label text="Format" GridPane.columnIndex="0" GridPane.rowIndex="1" styleClass="prop-label"/>
-                                        <Label text="RAW (14-bit)" GridPane.columnIndex="1" GridPane.rowIndex="1" styleClass="prop-value" GridPane.halignment="RIGHT"/>
+                                        <Label fx:id="metaFormat" text="-" GridPane.columnIndex="1" GridPane.rowIndex="1" styleClass="prop-value" GridPane.halignment="RIGHT"/>
                                         
                                         <Label text="Size" GridPane.columnIndex="0" GridPane.rowIndex="2" styleClass="prop-label"/>
-                                        <Label text="42.8 MB" GridPane.columnIndex="1" GridPane.rowIndex="2" styleClass="prop-value" GridPane.halignment="RIGHT"/>
+                                        <Label fx:id="metaSize" text="-" GridPane.columnIndex="1" GridPane.rowIndex="2" styleClass="prop-value" GridPane.halignment="RIGHT"/>
                                         
                                         <Label text="Dimensions" GridPane.columnIndex="0" GridPane.rowIndex="3" styleClass="prop-label"/>
-                                        <Label text="8256 × 5504" GridPane.columnIndex="1" GridPane.rowIndex="3" styleClass="prop-value" GridPane.halignment="RIGHT"/>
+                                        <Label fx:id="metaDimensions" text="-" GridPane.columnIndex="1" GridPane.rowIndex="3" styleClass="prop-value" GridPane.halignment="RIGHT"/>
+
+                                        <Label text="Created" GridPane.columnIndex="0" GridPane.rowIndex="4" styleClass="prop-label"/>
+                                        <Label fx:id="metaDateCreated" text="-" GridPane.columnIndex="1" GridPane.rowIndex="4" styleClass="prop-value" GridPane.halignment="RIGHT"/>
+                                        
+                                        <Label text="Modified" GridPane.columnIndex="0" GridPane.rowIndex="5" styleClass="prop-label"/>
+                                        <Label fx:id="metaDateModified" text="-" GridPane.columnIndex="1" GridPane.rowIndex="5" styleClass="prop-value" GridPane.halignment="RIGHT"/>
 
                                         <columnConstraints>
                                             <ColumnConstraints hgrow="SOMETIMES" minWidth="10" />
@@ -165,26 +199,26 @@
                                         <!-- row 0 -->
                                         <VBox styleClass="data-cell" GridPane.columnIndex="0" GridPane.rowIndex="0">
                                             <Label text="ISO" styleClass="data-label"/>
-                                            <Label text="100" styleClass="data-value"/>
+                                            <Label fx:id="metaIso" text="-" styleClass="data-value"/>
                                         </VBox>
                                         <VBox styleClass="data-cell" GridPane.columnIndex="1" GridPane.rowIndex="0">
                                             <Label text="APERTURE" styleClass="data-label"/>
-                                            <Label text="f/8.0" styleClass="data-value"/>
+                                            <Label fx:id="metaAperture" text="-" styleClass="data-value"/>
                                         </VBox>
                                         <!-- row 1 -->
                                         <VBox styleClass="data-cell" GridPane.columnIndex="0" GridPane.rowIndex="1">
                                             <Label text="SHUTTER" styleClass="data-label"/>
-                                            <Label text="1/250s" styleClass="data-value"/>
+                                            <Label fx:id="metaShutter" text="-" styleClass="data-value"/>
                                         </VBox>
                                         <VBox styleClass="data-cell" GridPane.columnIndex="1" GridPane.rowIndex="1">
                                             <Label text="FOCAL LENGTH" styleClass="data-label"/>
-                                            <Label text="35mm" styleClass="data-value"/>
+                                            <Label fx:id="metaFocalLength" text="-" styleClass="data-value"/>
                                         </VBox>
                                         <!-- row 2 full width -->
                                         <HBox styleClass="data-cell" GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.rowIndex="2">
                                             <Label text="LENS" styleClass="data-label"/>
                                             <Region HBox.hgrow="ALWAYS"/>
-                                            <Label text="Nikkor Z 35mm f/1.8 S" styleClass="data-value"/>
+                                            <Label fx:id="metaLens" text="-" styleClass="data-value"/>
                                         </HBox>
                                         
                                         <columnConstraints>
@@ -192,21 +226,6 @@
                                             <ColumnConstraints hgrow="ALWAYS" percentWidth="50" minWidth="10" />
                                         </columnConstraints>
                                     </GridPane>
-                                </VBox>
-                                
-                                <!-- CONTENT TAGS -->
-                                <VBox spacing="10">
-                                    <HBox>
-                                        <Label text="CONTENT TAGS" styleClass="section-label-blue"/>
-                                        <Region HBox.hgrow="ALWAYS"/>
-                                        <Label text="+" styleClass="icon-label"/>
-                                    </HBox>
-                                    <FlowPane hgap="8" vgap="8">
-                                        <Label text="Landscape" styleClass="tag"/>
-                                        <Label text="Moody" styleClass="tag"/>
-                                        <Label text="Mountains" styleClass="tag"/>
-                                        <Label text="✨ Atmospheric" styleClass="tag-tertiary"/>
-                                    </FlowPane>
                                 </VBox>
                                 
                                 <!-- ANNOTATIONS -->
@@ -219,6 +238,8 @@
                                               styleClass="annotation-area" wrapText="true" prefRowCount="4"/>
                                               
                                     <HBox spacing="10" alignment="CENTER_RIGHT">
+                                        <Button fx:id="deleteImageBtn" text="Delete Image" styleClass="btn-danger-outline"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
                                         <Button fx:id="removeMetadataBtn" text="Clear" styleClass="btn-secondary"/>
                                         <Button fx:id="syncMetadataBtn" text="Save Annotations" styleClass="btn-tertiary-outline"/>
                                     </HBox>

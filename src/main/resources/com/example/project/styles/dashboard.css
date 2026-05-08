@@ -187,12 +187,100 @@
     -fx-cursor: hand;
 }
 
+.btn-danger-outline {
+    -fx-background-color: transparent;
+    -fx-text-fill: #FF4444;
+    -fx-border-color: #FF4444;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 7 15 7 15;
+    -fx-cursor: hand;
+}
+
 .btn-filter {
     -fx-background-color: #262626;
     -fx-text-fill: #CCCCCC;
     -fx-background-radius: 8;
     -fx-padding: 6 12 6 12;
     -fx-cursor: hand;
+}
+
+/* SplitMenuButton and MenuButton overrides to match .btn-filter exactly */
+.btn-filter.split-menu-button,
+.btn-filter.menu-button {
+    -fx-padding: 0;
+}
+
+.btn-filter.split-menu-button > .label,
+.btn-filter.menu-button > .label {
+    -fx-background-color: transparent;
+    -fx-text-fill: #CCCCCC;
+    -fx-padding: 6 8 6 12;
+}
+
+.btn-filter.split-menu-button > .arrow-button,
+.btn-filter.menu-button > .arrow-button {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 6 12 6 8;
+}
+
+.btn-filter.split-menu-button > .arrow-button > .arrow,
+.btn-filter.menu-button > .arrow-button > .arrow {
+    -fx-background-color: #CCCCCC;
+}
+
+/* Dropdown Context Menu Styling */
+.context-menu {
+    -fx-background-color: #262626;
+    -fx-background-radius: 8;
+    -fx-border-color: #333333;
+    -fx-border-radius: 8;
+    -fx-padding: 5;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 10, 0, 0, 4);
+}
+
+.menu-item {
+    -fx-padding: 8 15 8 15;
+    -fx-background-color: transparent;
+}
+
+.menu-item .label {
+    -fx-text-fill: #CCCCCC;
+}
+
+.menu-item:focused {
+    -fx-background-color: #333333;
+    -fx-background-radius: 4;
+}
+
+.menu-item:focused .label {
+    -fx-text-fill: white;
+}
+
+.menu-checkbox {
+    -fx-text-fill: #CCCCCC;
+    -fx-cursor: hand;
+}
+
+.menu-checkbox .box {
+    -fx-background-color: #1A1A1A;
+    -fx-border-color: #546E7A;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+}
+
+.menu-checkbox:selected .box {
+    -fx-background-color: -color-primary;
+    -fx-border-color: -color-primary;
+}
+
+.menu-checkbox:selected .mark {
+    -fx-background-color: #121212;
+}
+
+.menu-item:focused .menu-checkbox, .menu-item:hover .menu-checkbox {
+    -fx-text-fill: white;
 }
 
 .icon-label {
@@ -294,6 +382,21 @@
 .prop-value {
     -fx-text-fill: white;
     -fx-font-size: 12px;
+}
+
+.editable-name-field {
+    -fx-background-color: #333333;
+    -fx-background-radius: 8;
+    -fx-border-color: transparent;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-padding: 4 8 4 8;
+    -fx-text-fill: white;
+    -fx-font-size: 12px;
+}
+
+.editable-name-field:focused {
+    -fx-border-color: -color-primary;
 }
 
 .data-cell {

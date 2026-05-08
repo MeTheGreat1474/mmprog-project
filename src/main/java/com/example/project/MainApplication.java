@@ -16,11 +16,12 @@ public class MainApplication extends Application {
         scene.getStylesheets().add(MainApplication.class.getResource("styles/dashboard.css").toExternalForm());
         stage.getIcons()
                 .add(new javafx.scene.image.Image(MainApplication.class.getResourceAsStream("images/app_icon.png")));
-        stage.setTitle("Darkroom Atelier");
-        
+        stage.setTitle("Atelier");
+
         // Remove standard OS application borders and title bar
-        // stage.initStyle(javafx.stage.StageStyle.UNDECORATED); // Reverting back to native OS bar
-        
+        // stage.initStyle(javafx.stage.StageStyle.UNDECORATED); // Reverting back to
+        // native OS bar
+
         stage.setScene(scene);
         // Safe layout minimum constraints
         stage.setMinWidth(700);
