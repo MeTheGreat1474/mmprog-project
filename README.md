@@ -1,0 +1,3 @@
+- make at your own branch
+- controller put under 'src\main\java\com\example\project\controllers'
+- styles, fxml under 'src\main\resources\com'
