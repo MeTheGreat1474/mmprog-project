@@ -1,0 +1,381 @@
+package com.example;
+
+import javafx.application.Application;
+import javafx.geometry.*;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.image.*;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
+import java.io.File;
+
+public class MainApp extends Application 
+{
+    private Image originalImage; // The untouched file
+    private Image currentImage;  // The image after transformations are applied
+    private ImageView imageView = new ImageView();
+    private Label heartIcon = new Label("♥");
+    private Label statusLabel = new Label("Status: Ready");
+    private ProgressBar progressBar = new ProgressBar(0);
+    private Slider brightSlider;
+
+    @Override
+    public void start(Stage primaryStage) 
+    {
+        primaryStage.setTitle("Image Editor");
+
+        // Left Sidebar 
+        VBox sideMenu = new VBox(10);
+        sideMenu.setPadding(new Insets(15));
+        sideMenu.setPrefWidth(250);
+        sideMenu.setStyle("-fx-background-color: #f4f4f4; -fx-border-color: #ccc; -fx-border-width: 0 1 0 0;");
+
+        // Load Button
+        Button loadButton = new Button("Open Image");
+        loadButton.setMaxWidth(Double.MAX_VALUE);
+        loadButton.setOnAction(e -> loadFile(primaryStage));
+
+        // 2. Geometric Section (Collapsible)
+        Button geoToolsButton = new Button("Geometric Tools ▼");
+        geoToolsButton.setMaxWidth(Double.MAX_VALUE);
+        VBox geometricBox = new VBox(10);
+        geometricBox.setVisible(false);
+        geometricBox.setManaged(false);
+        geometricBox.setPadding(new Insets(10, 0, 10, 20));
+
+        Label lblScale = new Label("Choose Scale Factor:");
+        ComboBox<Double> scaleOptions = new ComboBox<>();
+        scaleOptions.getItems().addAll(0.5, 1.0, 1.5, 2.0, 3.0, 5.0);
+        scaleOptions.setValue(1.0); // Default value
+        scaleOptions.setMaxWidth(Double.MAX_VALUE);
+
+        Button btnApplyScale = new Button("Apply Scaling");
+        btnApplyScale.setMaxWidth(Double.MAX_VALUE);
+
+        btnApplyScale.setOnAction(e -> {
+            if (currentImage != null) 
+            {
+                System.out.println("HOHOH");
+                double factor = scaleOptions.getValue();
+                // Use currentImage as the source
+                currentImage = GeometricTransformations.scale(currentImage, factor); 
+                imageView.setImage(currentImage);
+                statusLabel.setText("Status: Scaled. You can now apply other effects.");
+            }
+        });
+        
+        // Button scaleButton = new Button("Scale 2.0x");
+        // scaleButton.setOnAction(e -> {
+        //     if (originalImage != null) {
+        //         Image scaled = GeometricTransformations.scale(originalImage, 2.0);
+        //         imageView.setImage(scaled);
+        //     }
+        // });
+
+        // Brightness control
+        // VBox radBox = new VBox(5);
+        // radBox.setVisible(false); 
+        // radBox.setManaged(false);
+        // radBox.setPadding(new Insets(5, 0, 10, 20));
+        brightSlider = new Slider(-0.5, 0.5, 0);
+        brightSlider.valueProperty().addListener((obs, oldV, newV) -> {
+            if (currentImage != null) 
+            {
+                Image preview = ImageProcessorTest.adjustBrightness(currentImage, newV.doubleValue());
+                imageView.setImage(preview);
+            }
+        });
+
+        Button btnCommitBrightness = new Button("Commit Brightness");
+
+        btnCommitBrightness.setOnAction(e -> {
+            if (currentImage != null) 
+            {
+                // This "bakes" the current brightness into the image stack
+                currentImage = ImageProcessorTest.adjustBrightness(currentImage, brightSlider.getValue());
+                brightSlider.setValue(0); // Reset slider to neutral after committing
+                imageView.setImage(currentImage);
+                statusLabel.setText("Brightness applied to stack.");
+            }
+        });
+
+
+        geometricBox.getChildren().addAll(lblScale, scaleOptions, btnApplyScale, new Separator(), new Label("Brightness"), brightSlider, btnCommitBrightness);
+        geoToolsButton.setOnAction(e -> 
+        {
+                toggle(geometricBox);
+    }   );
+
+        // 3. Extraction Section (Collapsible)
+        Button extractionToolsButton = new Button("Object Extraction ▼");
+        extractionToolsButton.setMaxWidth(Double.MAX_VALUE);
+        VBox extractionBox = new VBox(10);
+        extractionBox.setVisible(false); 
+        extractionBox.setManaged(false);
+        extractionBox.setPadding(new Insets(5, 0, 10, 20));
+
+        ColorPicker colorPicker = new ColorPicker(Color.BLUE);
+        Slider threshold = new Slider(0, 1, 0.4);
+        Button extractButton = new Button("Extract");
+        extractButton.setOnAction(e -> {
+            if (currentImage != null) 
+            {
+                currentImage = ObjectSelector.extractByColor(currentImage, colorPicker.getValue(), threshold.getValue());
+                imageView.setImage(currentImage);
+                statusLabel.setText("Status: Extracted Image");
+            }
+        });
+
+        extractionBox.getChildren().addAll(new Label("Target Color:"), colorPicker, new Label("Threshold:"), threshold, extractButton);
+        extractionToolsButton.setOnAction(e -> toggle(extractionBox));
+
+        Button saveButton = new Button("Save Image");
+        saveButton.setOnAction(e -> {
+            if (currentImage != null)
+            {
+                ObjectSelector.extractByColor(currentImage, colorPicker.getValue(), threshold.getValue());
+                ObjectSelector.saveExtractedObject(currentImage, "extracted_result.png");
+                statusLabel.setText("Status: Saved extracted_result.png");
+            }
+        });
+
+        Button resetButton = new Button("Reset to Original");
+        resetButton.setStyle("-fx-base: #ff9999;"); // Light red color
+
+        resetButton.setOnAction(e -> {
+            if (originalImage != null) {
+                currentImage = originalImage; // Overwrite the stack with the original
+                imageView.setImage(currentImage);
+                brightSlider.setValue(0);
+                statusLabel.setText("Status: All effects cleared.");
+            }
+        });
+
+        // // 4. Radiometric Section (Collapsible)
+        // Button btnRadHeader = new Button("Radiometric Adjustment ▼");
+        // btnRadHeader.setMaxWidth(Double.MAX_VALUE);
+        // VBox radBox = new VBox(5);
+        // radBox.setVisible(false); 
+        // radBox.setManaged(false);
+        // radBox.setPadding(new Insets(5, 0, 10, 20));
+
+        // Slider brightSlider = new Slider(-0.5, 0.5, 0);
+        // brightSlider.valueProperty().addListener((obs, oldV, newV) -> {
+        //     if (originalImage != null) {
+        //         imageView.setImage(ImageProcessorTest.adjustBrightness(originalImage, newV.doubleValue()));
+        //     }
+        // });
+        // radBox.getChildren().addAll(new Label("Brightness:"), brightSlider);
+        // btnRadHeader.setOnAction(e -> toggle(radBox));
+
+        sideMenu.getChildren().addAll(loadButton, new Separator(), geoToolsButton, geometricBox, extractionToolsButton, extractionBox, new Separator(), saveButton, resetButton);
+
+        // --- Center Display (Requirement 2.1) ---
+        heartIcon.setTextFill(Color.RED);
+        heartIcon.setStyle("-fx-font-size: 40px;");
+        heartIcon.setVisible(false);
+        
+        StackPane centerStack = new StackPane(imageView, heartIcon);
+        centerStack.setStyle("-fx-background-color: #333;");
+        StackPane.setAlignment(heartIcon, Pos.TOP_RIGHT);
+        StackPane.setMargin(heartIcon, new Insets(20));
+        imageView.setPreserveRatio(true);
+        imageView.fitWidthProperty().bind(centerStack.widthProperty().multiply(0.8));
+
+        // --- Bottom Status Bar ---
+        HBox bottom = new HBox(15, statusLabel);
+        bottom.setPadding(new Insets(10));
+        bottom.setStyle("-fx-background-color: #ddd;");
+
+        BorderPane root = new BorderPane();
+        root.setLeft(sideMenu);
+        root.setCenter(centerStack);
+        root.setBottom(bottom);
+
+        primaryStage.setScene(new Scene(root, 1100, 750));
+        primaryStage.show();
+    }
+
+    private void loadFile(Stage stage) 
+    {
+        FileChooser fc = new FileChooser();
+        File file = fc.showOpenDialog(stage);
+        if (file != null) 
+        {
+            originalImage = new Image(file.toURI().toString());
+            currentImage = originalImage;
+            imageView.setImage(currentImage);
+            brightSlider.setValue(0);
+            statusLabel.setText("Loaded: " + file.getName());
+            // Show Heart as an example of Metadata indicator
+
+            heartIcon.setVisible(false); 
+        }
+    }
+
+    private void toggle(VBox box) {
+        boolean v = box.isVisible();
+        box.setVisible(!v);
+        box.setManaged(!v);
+    }
+
+    public static void main(String[] args) { launch(args); }
+}
+
+// import javafx.application.Application;
+// import javafx.geometry.Insets;
+// import javafx.geometry.Pos;
+// import javafx.scene.Scene;
+// import javafx.scene.control.*;
+// import javafx.scene.image.Image;
+// import javafx.scene.image.ImageView;
+// import javafx.scene.layout.*;
+// import javafx.scene.paint.Color;
+// import javafx.scene.text.Font;
+// import javafx.scene.text.Text;
+// import javafx.stage.FileChooser;
+// import javafx.stage.Stage;
+// import java.io.File;
+
+// public class MainApp extends Application 
+// {
+//     private ImageView imageView = new ImageView();
+//     private StackPane imageContainer = new StackPane();
+//     private Text heartIndicator = new Text("♥");
+//     private Image originalImage;
+
+//     // Main layout components
+//     private BorderPane root = new BorderPane();
+//     private VBox sideMenu = new VBox(15); // Left sidebar for functions
+//     private HBox statusBar = new HBox(10); // Bottom bar for status/volume
+//     private StackPane displayArea = new StackPane(); // Center area for image
+
+//     // Shared UI elements
+//     private Label statusLabel = new Label("System Ready");
+//     private Slider volumeSlider = new Slider(0, 100, 50);
+
+//     @Override
+//     public void start(Stage primaryStage) 
+//     {
+//         primaryStage.setTitle("WIG3003 Multimedia System 2026");
+
+//         // --- 1. LEFT SIDEBAR (The Navigation Module) ---
+//         // Requirement 2.1: Navigation and Selection [cite: 10]
+//         sideMenu.setPadding(new Insets(20));
+//         sideMenu.setPrefWidth(200);
+//         sideMenu.setStyle("-fx-background-color: #f4f4f4; -fx-border-color: #cccccc; -fx-border-width: 0 1 0 0;");
+        
+//         Label menuLabel = new Label("FUNCTIONS");
+//         menuLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+
+//         // --- UI Components ---
+//         Button btnLoad = new Button("Load Image");
+//         Button btnScale = new Button("Scale (2x)");
+//         Button btnExtract = new Button("Extract Object");
+//         ColorPicker colorPicker = new ColorPicker(Color.BLUE);
+//         colorPicker.setTooltip(new Tooltip("Select target color for extraction"));
+
+//         // Setting width to MAX so buttons are uniform
+//         btnLoad.setMaxWidth(Double.MAX_VALUE);
+//         btnScale.setMaxWidth(Double.MAX_VALUE);
+//         btnExtract.setMaxWidth(Double.MAX_VALUE);
+
+//         // Add to sidebar - Your friends can add their buttons here later!
+//         sideMenu.getChildren().addAll(menuLabel, new Separator(), btnLoad, btnScale, btnExtract);
+
+//         // // Requirement 2.2: Slider for continuous control [cite: 15]
+//         // Label brightnessLabel = new Label("Brightness:");
+//         // Slider brightnessSlider = new Slider(-0.5, 0.5, 0);
+//         // brightnessSlider.setShowTickLabels(true);
+
+//         // // Requirement 2.1: Visual Status Indicator (Red Heart) 
+//         // heartIndicator.setFill(Color.RED);
+//         // heartIndicator.setFont(Font.font(24));
+//         // heartIndicator.setVisible(false); // Only show if annotated
+
+//         // // --- Layout ---
+//         // imageContainer.getChildren().addAll(imageView, heartIndicator);
+//         // StackPane.setAlignment(heartIndicator, Pos.TOP_RIGHT); // Upper-right quadrant 
+
+//         // VBox controls = new VBox(10, btnLoad, colorPicker, btnScale, btnExtract, brightnessLabel, brightnessSlider);
+//         // controls.setPrefWidth(150);
+
+//         // --- 2. CENTER DISPLAY (The Visualization Module) ---
+//         imageView.setPreserveRatio(true);
+//         imageView.setFitWidth(600);
+//         displayArea.getChildren().add(imageView);
+//         displayArea.setStyle("-fx-background-color: #2b2b2b;"); // Dark background for contrast
+
+//         // --- 3. BOTTOM BAR (The Status & Playback Module) ---
+//         // Requirement 2.3: Playback control and status indicators 
+//         statusBar.setPadding(new Insets(10, 20, 10, 20));
+//         statusBar.setAlignment(Pos.CENTER_LEFT);
+//         statusBar.setStyle("-fx-background-color: #eeeeee; -fx-border-color: #cccccc; -fx-border-width: 1 0 0 0;");
+
+//         Label volLabel = new Label("Volume:");
+//         volumeSlider.setPrefWidth(150);
+        
+//         // Progress bar can act as a status or seek bar 
+//         ProgressBar progressBar = new ProgressBar(0);
+//         progressBar.setPrefWidth(200);
+
+//         // Region to push volume to the right
+//         Region spacer = new Region();
+//         HBox.setHgrow(spacer, Priority.ALWAYS);
+
+//         statusBar.getChildren().addAll(statusLabel, progressBar, spacer, volLabel, volumeSlider);
+
+//         // --- Event Handling ---
+//         btnLoad.setOnAction(e -> {
+//             FileChooser fileChooser = new FileChooser();
+//             File file = fileChooser.showOpenDialog(primaryStage);
+//             if (file != null) {
+//             originalImage = new Image(file.toURI().toString()); // Save the clean copy
+//             imageView.setImage(originalImage);
+//             heartIndicator.setVisible(true); 
+//         }
+//         });
+
+//         // Geometric Transformation: Resizing [cite: 17]
+//         btnScale.setOnAction(e -> {
+//             if (imageView.getImage() != null) {
+//                 Image scaled = GeometricTransformations.scale(imageView.getImage(), 2.0);
+//                 imageView.setImage(scaled);
+//             }
+//         });
+
+//         // Object Selection and Extraction [cite: 18]
+//         btnExtract.setOnAction(e -> {
+//             if (imageView.getImage() != null) {
+//                 // Example: Extract pixels similar to Blue
+//                 Color seleColor = colorPicker.getValue();
+//                 Image extracted = ObjectSelector.extractByColor(imageView.getImage(), seleColor, 0.5);
+//                 imageView.setImage(extracted);
+//             }
+//         });
+
+//         // Radiometric Adjustment via Slider [cite: 15]
+//         // brightnessSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
+//         // if (originalImage != null) {
+//         //     // ALWAYS start from originalImage, not imageView.getImage()
+//         //     Image bright = ImageProcessorTest.adjustBrightness(originalImage, newVal.doubleValue());
+//         //     imageView.setImage(bright);
+//         // }
+//         // });
+
+//         // --- 4. COMBINE INTO ROOT ---
+//         root.setLeft(sideMenu);
+//         root.setCenter(displayArea);
+//         root.setBottom(statusBar);
+
+//         primaryStage.setScene(new Scene(root, 1100, 750));
+//         primaryStage.show();
+//     }
+
+//     public static void main(String[] args) 
+//     {
+//         launch(args);
+//     }
+// }
