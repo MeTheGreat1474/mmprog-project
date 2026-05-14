@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.media.MediaView?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.example.project.controllers.VideoController"
+            prefWidth="1280"
+            prefHeight="800"
+            stylesheets="@../styles/dashboard.css"
+            style="-fx-background-color: #050505;">
+
+    <!-- LEFT SIDEBAR -->
+
+    <left>
+
+        <VBox prefWidth="340"
+              spacing="22"
+              style="-fx-background-color: #151515;
+                     -fx-padding: 25;">
+
+            <Label text="Video Compilation"
+                   style="-fx-text-fill: white;
+                          -fx-font-size: 28px;
+                          -fx-font-weight: bold;"/>
+
+            <!-- FOLDER -->
+
+            <VBox spacing="10">
+
+                <Label text="IMAGE FOLDER"
+                       style="-fx-text-fill: #8b8b8b;
+                              -fx-font-size: 11px;
+                              -fx-font-weight: bold;"/>
+
+                <HBox spacing="10">
+
+                    <TextField fx:id="selectedFolderField"
+                               editable="false"
+                               promptText="Choose image folder..."
+                               HBox.hgrow="ALWAYS"
+                               style="-fx-background-color: #202020;
+                                      -fx-text-fill: white;
+                                      -fx-prompt-text-fill: #666;
+                                      -fx-background-radius: 10;
+                                      -fx-border-radius: 10;
+                                      -fx-border-color: #2c2c2c;
+                                      -fx-padding: 10;"/>
+
+                    <Button text="Browse"
+                            onAction="#handleChooseImageFolder"
+                            style="-fx-background-color: #12b3ff;
+                                   -fx-text-fill: black;
+                                   -fx-font-weight: bold;
+                                   -fx-background-radius: 10;
+                                   -fx-cursor: hand;"/>
+                </HBox>
+
+            </VBox>
+
+            <!-- OVERLAY -->
+
+            <VBox spacing="10">
+
+                <Label text="TEXT OVERLAY"
+                       style="-fx-text-fill: #8b8b8b;
+                              -fx-font-size: 11px;
+                              -fx-font-weight: bold;"/>
+
+                    <TextArea fx:id="overlayTextArea"
+                            wrapText="true"
+                            prefHeight="180"
+                            promptText="Enter poem, captions, or overlay text..."
+                            style="-fx-control-inner-background: #202020;
+                                    -fx-background-color: #202020;
+                                    -fx-text-fill: #d6d6d6;
+                                    -fx-prompt-text-fill: #666;
+                                    -fx-highlight-fill: #12b3ff;
+                                    -fx-highlight-text-fill: black;
+                                    -fx-background-radius: 12;
+                                    -fx-border-radius: 12;
+                                    -fx-border-color: #2c2c2c;
+                                    -fx-font-size: 14px;"/>
+            </VBox>
+
+            <!-- GENERATE -->
+
+            <Button fx:id="generateVideoButton"
+                    text="Generate Video"
+                    maxWidth="Infinity"
+                    prefHeight="48"
+                    onAction="#handleGenerateVideo"
+                    style="-fx-background-color: #12b3ff;
+                           -fx-text-fill: black;
+                           -fx-font-size: 15px;
+                           -fx-font-weight: bold;
+                           -fx-background-radius: 12;
+                           -fx-cursor: hand;"/>
+
+            <HBox alignment="CENTER">
+
+                <ProgressIndicator fx:id="progressIndicator"
+                                   visible="false"
+                                   prefWidth="45"
+                                   prefHeight="45"/>
+            </HBox>
+
+        </VBox>
+
+    </left>
+
+    <!-- CENTER -->
+
+    <center>
+
+        <AnchorPane style="-fx-background-color: #050505;">
+
+            <VBox alignment="CENTER"
+                  spacing="20"
+                  AnchorPane.topAnchor="20"
+                  AnchorPane.leftAnchor="20"
+                  AnchorPane.rightAnchor="20"
+                  AnchorPane.bottomAnchor="20">
+
+                <Label text="Generated Video"
+                       style="-fx-text-fill: white;
+                              -fx-font-size: 30px;
+                              -fx-font-weight: bold;"/>
+
+                <!-- VIDEO CARD -->
+
+                <StackPane style="-fx-background-color: #101010;
+                                  -fx-background-radius: 20;
+                                  -fx-border-color: #222;
+                                  -fx-border-radius: 20;
+                                  -fx-padding: 20;">
+
+                    <VBox spacing="18"
+                          alignment="CENTER">
+
+                        <MediaView fx:id="mediaView"
+                                   fitWidth="920"
+                                   fitHeight="540"
+                                   preserveRatio="true"/>
+
+                        <!-- SEEK -->
+
+                        <HBox spacing="12"
+                              alignment="CENTER"
+                              maxWidth="900">
+
+                            <Label fx:id="currentTimeLabel"
+                                   text="00:00"
+                                   style="-fx-text-fill: white;"/>
+
+                            <Slider fx:id="seekSlider"
+                                    HBox.hgrow="ALWAYS"/>
+
+                            <Label fx:id="totalTimeLabel"
+                                   text="00:00"
+                                   style="-fx-text-fill: white;"/>
+
+                        </HBox>
+
+                        <!-- CONTROLS -->
+
+                        <HBox fx:id="playerControls"
+                              spacing="15"
+                              alignment="CENTER">
+
+                            <Button text="Play"
+                                    prefWidth="110"
+                                    onAction="#handlePlay"
+                                    style="-fx-background-color: #12b3ff;
+                                           -fx-text-fill: black;
+                                           -fx-font-weight: bold;
+                                           -fx-background-radius: 10;
+                                           -fx-cursor: hand;"/>
+
+                            <Button text="Pause"
+                                    prefWidth="110"
+                                    onAction="#handlePause"
+                                    style="-fx-background-color: #202020;
+                                           -fx-text-fill: white;
+                                           -fx-background-radius: 10;
+                                           -fx-cursor: hand;"/>
+
+                            <Button text="Stop"
+                                    prefWidth="110"
+                                    onAction="#handleStop"
+                                    style="-fx-background-color: #202020;
+                                           -fx-text-fill: white;
+                                           -fx-background-radius: 10;
+                                           -fx-cursor: hand;"/>
+
+                            <Button text="Restart"
+                                    prefWidth="110"
+                                    onAction="#handleRestart"
+                                    style="-fx-background-color: #202020;
+                                           -fx-text-fill: white;
+                                           -fx-background-radius: 10;
+                                           -fx-cursor: hand;"/>
+
+                        </HBox>
+
+                    </VBox>
+
+                </StackPane>
+
+            </VBox>
+
+        </AnchorPane>
+
+    </center>
+
+</BorderPane>
