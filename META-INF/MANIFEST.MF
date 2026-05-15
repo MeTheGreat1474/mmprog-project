@@ -1,0 +1,32 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1703795204403
+Build-Jdk-Spec: 1.8
+Bundle-Description: OpenCV packaged with native libraries and loader f
+ or multiple platforms.
+Bundle-License: http://github.com/Itseez/opencv/raw/master/LICENSE
+Bundle-ManifestVersion: 2
+Bundle-Name: OpenPnP OpenCV
+Bundle-SymbolicName: org.openpnp.opencv
+Bundle-Version: 4.9.0.0
+Created-By: Apache Maven Bundle Plugin 5.1.9
+Export-Package: nu.pattern;version="4.9.0",nu.pattern.opencv.linux.ARM
+ v7;version="4.9.0",nu.pattern.opencv.linux.ARMv8;version="4.9.0",nu.p
+ attern.opencv.linux.x86_32;version="4.9.0",nu.pattern.opencv.linux.x8
+ 6_64;version="4.9.0",nu.pattern.opencv.osx.ARMv8;version="4.9.0",nu.p
+ attern.opencv.osx.x86_64;version="4.9.0",nu.pattern.opencv.windows.x8
+ 6_32;version="4.9.0",nu.pattern.opencv.windows.x86_64;version="4.9.0"
+ ,org.opencv.calib3d;uses:="org.opencv.core";version="4.9.0",org.openc
+ v.core;version="4.9.0",org.opencv.dnn;uses:="org.opencv.core";version
+ ="4.9.0",org.opencv.features2d;uses:="org.opencv.core";version="4.9.0
+ ",org.opencv.highgui;uses:="org.opencv.core";version="4.9.0",org.open
+ cv.imgcodecs;uses:="org.opencv.core";version="4.9.0",org.opencv.imgpr
+ oc;uses:="org.opencv.core";version="4.9.0",org.opencv.ml;uses:="org.o
+ pencv.core";version="4.9.0",org.opencv.objdetect;uses:="org.opencv.co
+ re";version="4.9.0",org.opencv.osgi;version="4.9.0",org.opencv.photo;
+ uses:="org.opencv.core";version="4.9.0",org.opencv.utils;uses:="org.o
+ pencv.core";version="4.9.0",org.opencv.video;uses:="org.opencv.core";
+ version="4.9.0",org.opencv.videoio;uses:="org.opencv.core";version="4
+ .9.0"
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))"
+Tool: Bnd-6.3.1.202206071316
+

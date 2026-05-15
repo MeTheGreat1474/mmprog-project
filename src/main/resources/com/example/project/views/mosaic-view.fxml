@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.Slider?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.example.project.controllers.MosaicController"
+            prefWidth="1280"
+            prefHeight="800"
+            stylesheets="@../styles/dashboard.css"
+            style="-fx-background-color: #050505;">
+
+    <!-- LEFT SIDEBAR -->
+
+    <left>
+
+        <VBox prefWidth="320"
+              spacing="22"
+              style="-fx-background-color: #151515;
+                     -fx-padding: 25;">
+
+            <Label text="Mosaic Generator"
+                   style="-fx-text-fill: white;
+                          -fx-font-size: 28px;
+                          -fx-font-weight: bold;"/>
+
+            <!-- TARGET IMAGE -->
+
+            <VBox spacing="10">
+
+                <Label text="TARGET IMAGE"
+                       style="-fx-text-fill: #8b8b8b;
+                              -fx-font-size: 11px;
+                              -fx-font-weight: bold;"/>
+
+                <HBox spacing="10">
+                    <TextField fx:id="targetImageField"
+                               editable="false"
+                               promptText="Choose target image..."
+                               HBox.hgrow="ALWAYS"
+                               style="-fx-background-color: #202020;
+                                      -fx-text-fill: white;
+                                      -fx-prompt-text-fill: #666;
+                                      -fx-background-radius: 10;
+                                      -fx-border-radius: 10;
+                                      -fx-border-color: #2c2c2c;
+                                      -fx-padding: 10;"/>
+
+                    <Button text="Browse"
+                            onAction="#handleChooseTargetImage"
+                            style="-fx-background-color: #12b3ff;
+                                   -fx-text-fill: black;
+                                   -fx-font-weight: bold;
+                                   -fx-background-radius: 10;
+                                   -fx-cursor: hand;"/>
+                </HBox>
+            </VBox>
+
+            <!-- TILE FOLDER -->
+
+            <VBox spacing="10">
+                <Label text="TILE IMAGE FOLDER"
+                       style="-fx-text-fill: #8b8b8b;
+                              -fx-font-size: 11px;
+                              -fx-font-weight: bold;"/>
+
+                <HBox spacing="10">
+                    <TextField fx:id="tileFolderField"
+                               editable="false"
+                               promptText="Choose tile image folder..."
+                               HBox.hgrow="ALWAYS"
+                               style="-fx-background-color: #202020;
+                                      -fx-text-fill: white;
+                                      -fx-prompt-text-fill: #666;
+                                      -fx-background-radius: 10;
+                                      -fx-border-radius: 10;
+                                      -fx-border-color: #2c2c2c;
+                                      -fx-padding: 10;"/>
+
+                    <Button text="Browse"
+                            onAction="#handleChooseTileFolder"
+                            style="-fx-background-color: #12b3ff;
+                                   -fx-text-fill: black;
+                                   -fx-font-weight: bold;
+                                   -fx-background-radius: 10;
+                                   -fx-cursor: hand;"/>
+                </HBox>
+            </VBox>
+
+            <!-- TILE SIZE -->
+
+            <VBox spacing="12">
+                <Label text="TILE SIZE"
+                       style="-fx-text-fill: #8b8b8b;
+                              -fx-font-size: 11px;
+                              -fx-font-weight: bold;"/>
+
+                <HBox spacing="15"
+                      alignment="CENTER_LEFT">
+
+                    <Slider fx:id="tileSizeSlider"
+                            prefWidth="220"/>
+
+                    <Label fx:id="tileSizeLabel"
+                           text="25"
+                           style="-fx-text-fill: #12b3ff;
+                                  -fx-font-size: 18px;
+                                  -fx-font-weight: bold;"/>
+                </HBox>
+            </VBox>
+
+            <!-- GENERATE -->
+
+            <Button fx:id="generateButton"
+                    text="Generate Mosaic"
+                    maxWidth="Infinity"
+                    prefHeight="48"
+                    onAction="#handleGenerateMosaic"
+                    style="-fx-background-color: #12b3ff;
+                           -fx-text-fill: black;
+                           -fx-font-size: 15px;
+                           -fx-font-weight: bold;
+                           -fx-background-radius: 12;
+                           -fx-cursor: hand;"/>
+
+            <HBox alignment="CENTER">
+                <ProgressIndicator fx:id="progressIndicator"
+                                   visible="false"
+                                   prefWidth="45"
+                                   prefHeight="45"/>
+            </HBox>
+        </VBox>
+    </left>
+
+    <!-- CENTER -->
+
+    <center>
+        <AnchorPane style="-fx-background-color: #050505;">
+            <VBox alignment="CENTER"
+                  spacing="20"
+                  AnchorPane.topAnchor="20"
+                  AnchorPane.leftAnchor="20"
+                  AnchorPane.rightAnchor="20"
+                  AnchorPane.bottomAnchor="20">
+
+                <Label text="Mosaic Preview"
+                       style="-fx-text-fill: white;
+                              -fx-font-size: 30px;
+                              -fx-font-weight: bold;"/>
+
+                <StackPane style="-fx-background-color: #101010;
+                                  -fx-background-radius: 20;
+                                  -fx-border-color: #222;
+                                  -fx-border-radius: 20;
+                                  -fx-padding: 20;">
+
+                    <ImageView fx:id="previewImageView"
+                               fitWidth="900"
+                               fitHeight="620"
+                               preserveRatio="true"
+                               smooth="true"/>
+
+                </StackPane>
+
+            </VBox>
+
+        </AnchorPane>
+
+    </center>
+    
+</BorderPane>
