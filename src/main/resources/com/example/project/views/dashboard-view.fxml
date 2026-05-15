@@ -248,7 +248,7 @@
                                             <Insets top="15"/>
                                         </VBox.margin>
                                     </Button>
-                                    <Button fx:id="openEditorBtn" text="Open Image Editor" styleClass="btn-secondary" maxWidth="Infinity">
+                                    <Button fx:id="openEditorBtn" text="Open Image Editor" styleClass="btn-primary-outline" maxWidth="Infinity">
                                         <VBox.margin>
                                             <Insets top="10"/>
                                         </VBox.margin>
