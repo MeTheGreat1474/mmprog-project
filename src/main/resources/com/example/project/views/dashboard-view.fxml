@@ -69,7 +69,7 @@
                     <!-- Top Right Actions Container (Dynamically bound) -->
                     <HBox alignment="CENTER_RIGHT" spacing="15" fx:id="topRightActions" minWidth="0">
                         <Label text="⚙" styleClass="icon-label"/>
-                        <Button text="Generate" styleClass="btn-primary"/>
+                        <Button fx:id="generateVideoBtn" text="Generate Video" styleClass="btn-primary"/>
                     </HBox>
                 </HBox>
             </top>
@@ -249,6 +249,11 @@
                                         </VBox.margin>
                                     </Button>
                                     <Button fx:id="openEditorBtn" text="Open Image Editor" styleClass="btn-primary-outline" maxWidth="Infinity">
+                                        <VBox.margin>
+                                            <Insets top="10"/>
+                                        </VBox.margin>
+                                    </Button>
+                                    <Button fx:id="openMosaicBtn" text="Open Mosaic Processor" styleClass="btn-primary-outline" maxWidth="Infinity">
                                         <VBox.margin>
                                             <Insets top="10"/>
                                         </VBox.margin>

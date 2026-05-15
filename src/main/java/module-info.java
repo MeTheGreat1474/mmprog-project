@@ -10,11 +10,9 @@ module com.example.project {
     requires javafx.graphics;
 
     opens com.example.project to javafx.fxml;
-
     exports com.example.project;
 
     opens com.example.project.controllers to javafx.fxml;
-
     exports com.example.project.controllers;
     
     opens com.Thierry to javafx.fxml, javafx.graphics;

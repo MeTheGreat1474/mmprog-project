@@ -32,6 +32,7 @@ public class MainApplication extends Application {
     }
 
     public static void main(String[] args) {
+        nu.pattern.OpenCV.loadLocally();
         launch();
     }
 }

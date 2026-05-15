@@ -64,7 +64,9 @@ public class DashboardController implements Initializable {
     @FXML private javafx.scene.control.Button syncMetadataBtn;
     @FXML private javafx.scene.control.Button removeMetadataBtn;
     @FXML private javafx.scene.control.Button openFullscreenBtn;
+    @FXML private javafx.scene.control.Button generateVideoBtn;
     @FXML private javafx.scene.control.Button openEditorBtn;
+    @FXML private javafx.scene.control.Button openMosaicBtn;
     @FXML private javafx.scene.control.Button deleteImageBtn;
 
     @FXML private javafx.scene.control.MenuButton filterBtn;
@@ -201,7 +203,12 @@ public class DashboardController implements Initializable {
         if (openFullscreenBtn != null) {
             openFullscreenBtn.setOnAction(e -> {
                 if (currentActiveFile != null) {
-                    fetchAndOpenImageWindow(currentActiveFile);
+                    String fLower = currentActiveFile.toLowerCase();
+                    if (fLower.endsWith(".mp4") || fLower.endsWith(".mov") || fLower.endsWith(".avi")) {
+                        fetchAndOpenVideoWindow(currentActiveFile);
+                    } else {
+                        fetchAndOpenImageWindow(currentActiveFile);
+                    }
                 }
             });
         }
@@ -217,6 +224,46 @@ public class DashboardController implements Initializable {
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
+                }
+            });
+        }
+
+        if (openMosaicBtn != null) {
+            openMosaicBtn.setOnAction(e -> {
+                if (currentActiveFile != null) {
+                    try {
+                        javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(com.example.project.MainApplication.class.getResource("views/mosaic-view.fxml"));
+                        javafx.scene.Scene scene = new javafx.scene.Scene(loader.load(), 1280, 800);
+                        com.example.project.controllers.MosaicController controller = loader.getController();
+                        
+                        Stage mosaicStage = new Stage();
+                        mosaicStage.setTitle("Mosaic Processor");
+                        mosaicStage.setScene(scene);
+                        mosaicStage.show();
+                        
+                        controller.loadExternalTargetImage(currentActiveFile);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            });
+        }
+
+        if (generateVideoBtn != null) {
+            generateVideoBtn.setOnAction(e -> {
+                try {
+                    javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(com.example.project.MainApplication.class.getResource("views/video-view.fxml"));
+                    javafx.scene.Scene scene = new javafx.scene.Scene(loader.load(), 1280, 800);
+                    com.example.project.controllers.VideoController controller = loader.getController();
+                    
+                    Stage videoStage = new Stage();
+                    videoStage.setTitle("Video Generator");
+                    videoStage.setScene(scene);
+                    videoStage.show();
+                    
+                    controller.loadExternalImageFolder(DatabaseManager.IMAGES_FOLDER);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
                 }
             });
         }
@@ -388,7 +435,31 @@ public class DashboardController implements Initializable {
         try {
             File imgFile = new File(file);
             if (imgFile.exists()) {
-                selectedImagePreview.setImage(new Image(imgFile.toURI().toString(), PREVIEW_RESAMPLE_SIZE, PREVIEW_RESAMPLE_SIZE, true, true));
+                String fLower = file.toLowerCase();
+                boolean isVideo = fLower.endsWith(".mp4") || fLower.endsWith(".mov") || fLower.endsWith(".avi");
+                if (isVideo) {
+                    selectedImagePreview.setImage(new Image(com.example.project.MainApplication.class.getResourceAsStream("images/video_icon.png")));
+                    if (openEditorBtn != null) {
+                        openEditorBtn.setVisible(false);
+                        openEditorBtn.setManaged(false);
+                    }
+                    if (openMosaicBtn != null) {
+                        openMosaicBtn.setVisible(false);
+                        openMosaicBtn.setManaged(false);
+                    }
+                    if (openFullscreenBtn != null) openFullscreenBtn.setText("Open Media Player");
+                } else {
+                    selectedImagePreview.setImage(new Image(imgFile.toURI().toString(), PREVIEW_RESAMPLE_SIZE, PREVIEW_RESAMPLE_SIZE, true, true));
+                    if (openEditorBtn != null) {
+                        openEditorBtn.setVisible(true);
+                        openEditorBtn.setManaged(true);
+                    }
+                    if (openMosaicBtn != null) {
+                        openMosaicBtn.setVisible(true);
+                        openMosaicBtn.setManaged(true);
+                    }
+                    if (openFullscreenBtn != null) openFullscreenBtn.setText("Open Full Image Viewer");
+                }
                 updateMetadataPanel(file);
             }
         } catch (Exception e) {
@@ -532,7 +603,7 @@ public class DashboardController implements Initializable {
             FileChooser chooser = new FileChooser();
             chooser.setTitle("Import Image");
             chooser.getExtensionFilters().addAll(
-                    new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.nef"));
+                    new FileChooser.ExtensionFilter("Media Files", "*.png", "*.jpg", "*.jpeg", "*.nef", "*.mp4", "*.mov", "*.avi"));
             File selectedFile = chooser.showOpenDialog(cell.getScene().getWindow());
             if (selectedFile != null) {
                 importImageToLibrary(selectedFile);
@@ -544,7 +615,7 @@ public class DashboardController implements Initializable {
                 boolean hasImage = false;
                 for (File file : event.getDragboard().getFiles()) {
                     String name = file.getName().toLowerCase();
-                    if (name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".nef")) {
+                    if (name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".nef") || name.endsWith(".mp4") || name.endsWith(".mov") || name.endsWith(".avi")) {
                         hasImage = true;
                         break;
                     }
@@ -562,7 +633,7 @@ public class DashboardController implements Initializable {
             if (dragboard.hasFiles()) {
                 for (File file : dragboard.getFiles()) {
                     String name = file.getName().toLowerCase();
-                    if (name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".nef")) {
+                    if (name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".nef") || name.endsWith(".mp4") || name.endsWith(".mov") || name.endsWith(".avi")) {
                         importImageToLibrary(file);
                         success = true;
                     }
@@ -582,7 +653,13 @@ public class DashboardController implements Initializable {
             if (!imgFile.exists()) return;
 
             // Downsample memory load footprint & smooth pixel aliasing natively
-            Image img = new Image(imgFile.toURI().toString(), THUMBNAIL_RESAMPLE_SIZE, THUMBNAIL_RESAMPLE_SIZE, true, true);
+            Image img;
+            String fLower = file.toLowerCase();
+            if (fLower.endsWith(".mp4") || fLower.endsWith(".mov") || fLower.endsWith(".avi")) {
+                img = new Image(com.example.project.MainApplication.class.getResourceAsStream("images/video_icon.png"));
+            } else {
+                img = new Image(imgFile.toURI().toString(), THUMBNAIL_RESAMPLE_SIZE, THUMBNAIL_RESAMPLE_SIZE, true, true);
+            }
             ImageView imageView = new ImageView(img);
             imageView.setPreserveRatio(true);
 
@@ -640,7 +717,12 @@ public class DashboardController implements Initializable {
                 }
 
                 if (event.getClickCount() == 2) {
-                    fetchAndOpenImageWindow(currentFile);
+                    String fL = currentFile.toLowerCase();
+                    if (fL.endsWith(".mp4") || fL.endsWith(".mov") || fL.endsWith(".avi")) {
+                        fetchAndOpenVideoWindow(currentFile);
+                    } else {
+                        fetchAndOpenImageWindow(currentFile);
+                    }
                 }
             });
 
@@ -673,8 +755,41 @@ public class DashboardController implements Initializable {
             stage.setTitle("Darkroom Atelier Viewer - " + imgFile.getName());
             stage.setScene(scene);
             stage.show();
-        } catch (Exception ex) {
-            ex.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void fetchAndOpenVideoWindow(String filePath) {
+        try {
+            File vidFile = new File(filePath);
+            if (!vidFile.exists()) return;
+
+            javafx.scene.media.Media media = new javafx.scene.media.Media(vidFile.toURI().toString());
+            javafx.scene.media.MediaPlayer mediaPlayer = new javafx.scene.media.MediaPlayer(media);
+            javafx.scene.media.MediaView mediaView = new javafx.scene.media.MediaView(mediaPlayer);
+            
+            mediaView.setPreserveRatio(true);
+
+            StackPane root = new StackPane(mediaView);
+            root.setStyle("-fx-background-color: #0D0D0D;");
+
+            Scene scene = new Scene(root, FULL_VIEWER_WIDTH, FULL_VIEWER_HEIGHT);
+
+            mediaView.fitWidthProperty().bind(scene.widthProperty());
+            mediaView.fitHeightProperty().bind(scene.heightProperty());
+
+            Stage stage = new Stage();
+            stage.setTitle("Darkroom Atelier Media Player - " + vidFile.getName());
+            stage.setScene(scene);
+            
+            stage.setOnCloseRequest(e -> mediaPlayer.stop());
+            
+            stage.show();
+            mediaPlayer.play();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
