@@ -31,4 +31,28 @@ public class ImageProcessorTest
         }
         return output;
     }
+
+    public static Image convertToGrayscale(Image originalImage) {
+
+        int width = (int) originalImage.getWidth();
+        int height = (int) originalImage.getHeight();
+
+        WritableImage grayImage = new WritableImage(width, height);
+
+        PixelReader pixelReader = originalImage.getPixelReader();
+        PixelWriter pixelWriter = grayImage.getPixelWriter();
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+
+                Color color = pixelReader.getColor(x, y);
+
+                Color grayColor = color.grayscale();
+
+                pixelWriter.setColor(x, y, grayColor);
+            }
+        }
+
+        return grayImage;
+    }
 }

@@ -46,7 +46,15 @@ public class MainApp extends Application {
         geometricBox.setVisible(false);
         geometricBox.setManaged(false);
         geometricBox.setPadding(new Insets(5, 0, 10, 20));
-        
+
+        Button grayscaleBtn = new Button("Grayscale");
+        grayscaleBtn.setOnAction(e -> {
+            if (originalImage != null) {
+                Image grayImage = ImageProcessorTest.convertToGrayscale(originalImage);
+                imageView.setImage(grayImage);
+            }
+        });
+
         Button scaleButton = new Button("Scale 2.0x");
         scaleButton.setOnAction(e -> {
             if (originalImage != null) {
@@ -114,6 +122,8 @@ public class MainApp extends Application {
         // btnRadHeader.setOnAction(e -> toggle(radBox));
 
         sideMenu.getChildren().addAll(loadButton, new Separator(), geoToolsButton, geometricBox, extractionToolsButton, extractionBox);
+
+        sideMenu.getChildren().add(grayscaleBtn);
 
         // --- Center Display (Requirement 2.1) ---
         heartIcon.setTextFill(Color.RED);
