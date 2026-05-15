@@ -98,4 +98,48 @@ public class ImageProcessorTest
 
         return value;
     }
+
+    public static Image addBorder(Image originalImage) {
+
+        int borderSize = 20;
+
+        int width = (int) originalImage.getWidth();
+        int height = (int) originalImage.getHeight();
+
+        WritableImage borderedImage =
+                new WritableImage(
+                        width + borderSize * 2,
+                        height + borderSize * 2
+                );
+
+        PixelReader reader = originalImage.getPixelReader();
+        PixelWriter writer = borderedImage.getPixelWriter();
+
+        for (int y = 0; y < height + borderSize * 2; y++) {
+            for (int x = 0; x < width + borderSize * 2; x++) {
+
+                if (
+                        x < borderSize ||
+                                y < borderSize ||
+                                x >= width + borderSize ||
+                                y >= height + borderSize
+                ) {
+
+                    writer.setColor(x, y, Color.BLACK);
+
+                } else {
+
+                    Color color =
+                            reader.getColor(
+                                    x - borderSize,
+                                    y - borderSize
+                            );
+
+                    writer.setColor(x, y, color);
+                }
+            }
+        }
+
+        return borderedImage;
+    }
 }

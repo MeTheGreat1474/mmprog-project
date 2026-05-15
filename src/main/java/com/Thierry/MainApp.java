@@ -55,6 +55,18 @@ public class MainApp extends Application {
             }
         });
 
+        Button borderBtn = new Button("Add Border");
+        borderBtn.setOnAction(e -> {
+
+            if (originalImage != null) {
+
+                Image borderedImage =
+                        ImageProcessorTest.addBorder(originalImage);
+
+                imageView.setImage(borderedImage);
+            }
+        });
+
         Button scaleButton = new Button("Scale 2.0x");
         scaleButton.setOnAction(e -> {
             if (originalImage != null) {
@@ -144,6 +156,8 @@ public class MainApp extends Application {
         sideMenu.getChildren().addAll(loadButton, new Separator(), geoToolsButton, geometricBox, extractionToolsButton, extractionBox);
 
         sideMenu.getChildren().add(grayscaleBtn);
+
+        sideMenu.getChildren().add(borderBtn);
 
         // --- Center Display (Requirement 2.1) ---
         heartIcon.setTextFill(Color.RED);
