@@ -2,14 +2,22 @@ package com.Thierry;
 
 import javafx.application.Application;
 import javafx.geometry.*;
+import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.image.*;
+import javafx.scene.image.Image;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+
+import java.awt.*;
 import java.io.File;
+import java.net.URI;
+import java.net.URLEncoder;
 
 import com.example.project.models.GeometricTransformations;
 import com.example.project.models.ImageProcessorTest;
@@ -64,6 +72,43 @@ public class MainApp extends Application {
                         ImageProcessorTest.addBorder(originalImage);
 
                 imageView.setImage(borderedImage);
+            }
+        });
+
+        Button emailBtn = new Button("Share via Email");
+        emailBtn.setOnAction(e -> {
+
+            try {
+
+                Desktop.getDesktop().browse(
+                        new URI(
+                                "mailto:?subject=Shared Image&body=Check out this edited image!"
+                        )
+                );
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        Button whatsappBtn = new Button("Share via WhatsApp");
+        whatsappBtn.setOnAction(e -> {
+
+            try {
+
+                String message =
+                        "Check out this edited image!";
+
+                String whatsappURL =
+                        "https://wa.me/?text="
+                                + URLEncoder.encode(message, "UTF-8");
+
+                Desktop.getDesktop().browse(
+                        new URI(whatsappURL)
+                );
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
         });
 
@@ -158,6 +203,11 @@ public class MainApp extends Application {
         sideMenu.getChildren().add(grayscaleBtn);
 
         sideMenu.getChildren().add(borderBtn);
+
+        sideMenu.getChildren().addAll(
+                emailBtn,
+                whatsappBtn
+        );
 
         // --- Center Display (Requirement 2.1) ---
         heartIcon.setTextFill(Color.RED);
