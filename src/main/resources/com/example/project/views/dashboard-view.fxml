@@ -248,6 +248,11 @@
                                             <Insets top="15"/>
                                         </VBox.margin>
                                     </Button>
+                                    <Button fx:id="openEditorBtn" text="Open Image Editor" styleClass="btn-secondary" maxWidth="Infinity">
+                                        <VBox.margin>
+                                            <Insets top="10"/>
+                                        </VBox.margin>
+                                    </Button>
                                 </VBox>
                                 
                             </VBox>

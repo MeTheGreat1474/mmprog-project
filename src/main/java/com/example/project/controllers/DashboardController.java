@@ -64,6 +64,7 @@ public class DashboardController implements Initializable {
     @FXML private javafx.scene.control.Button syncMetadataBtn;
     @FXML private javafx.scene.control.Button removeMetadataBtn;
     @FXML private javafx.scene.control.Button openFullscreenBtn;
+    @FXML private javafx.scene.control.Button openEditorBtn;
     @FXML private javafx.scene.control.Button deleteImageBtn;
 
     @FXML private javafx.scene.control.MenuButton filterBtn;
@@ -201,6 +202,21 @@ public class DashboardController implements Initializable {
             openFullscreenBtn.setOnAction(e -> {
                 if (currentActiveFile != null) {
                     fetchAndOpenImageWindow(currentActiveFile);
+                }
+            });
+        }
+
+        if (openEditorBtn != null) {
+            openEditorBtn.setOnAction(e -> {
+                if (currentActiveFile != null) {
+                    try {
+                        Stage editorStage = new Stage();
+                        com.Thierry.MainApp editorApp = new com.Thierry.MainApp();
+                        editorApp.start(editorStage);
+                        editorApp.loadExternalImage(currentActiveFile);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
                 }
             });
         }
