@@ -76,6 +76,26 @@ public class MainApp extends Application {
         });
         radBox.getChildren().addAll(new Label("Brightness:"), brightSlider);
 
+        Label contrastLabel = new Label("Contrast");
+
+        Slider contrastSlider = new Slider(0.5, 2.0, 1.0);
+        contrastSlider.setShowTickLabels(true);
+        contrastSlider.setShowTickMarks(true);
+
+        contrastSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
+
+            if (originalImage != null) {
+
+                Image contrastImage =
+                        ImageProcessorTest.adjustContrast(
+                                originalImage,
+                                newVal.doubleValue()
+                        );
+
+                imageView.setImage(contrastImage);
+            }
+        });
+
         geometricBox.getChildren().addAll(scaleButton, new Separator(), new Label("Brightness"), brightSlider);
         geoToolsButton.setOnAction(e -> 
         {

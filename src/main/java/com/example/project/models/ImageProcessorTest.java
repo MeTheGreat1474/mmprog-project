@@ -55,4 +55,47 @@ public class ImageProcessorTest
 
         return grayImage;
     }
+
+    public static Image adjustContrast(Image originalImage, double contrast) {
+
+        int width = (int) originalImage.getWidth();
+        int height = (int) originalImage.getHeight();
+
+        WritableImage outputImage = new WritableImage(width, height);
+
+        PixelReader pixelReader = originalImage.getPixelReader();
+        PixelWriter pixelWriter = outputImage.getPixelWriter();
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+
+                Color color = pixelReader.getColor(x, y);
+
+                double red = ((color.getRed() - 0.5) * contrast) + 0.5;
+                double green = ((color.getGreen() - 0.5) * contrast) + 0.5;
+                double blue = ((color.getBlue() - 0.5) * contrast) + 0.5;
+
+                red = clamp(red);
+                green = clamp(green);
+                blue = clamp(blue);
+
+                pixelWriter.setColor(x, y, new Color(red, green, blue, color.getOpacity()));
+            }
+        }
+
+        return outputImage;
+    }
+
+    private static double clamp(double value) {
+
+        if (value < 0.0) {
+            return 0.0;
+        }
+
+        if (value > 1.0) {
+            return 1.0;
+        }
+
+        return value;
+    }
 }
