@@ -42,8 +42,10 @@ public class ImageProcessor
         PixelReader pixelReader = originalImage.getPixelReader();
         PixelWriter pixelWriter = grayImage.getPixelWriter();
 
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
+        for (int y = 0; y < height; y++) 
+        {
+            for (int x = 0; x < width; x++) 
+            {
 
                 Color color = pixelReader.getColor(x, y);
 
@@ -56,7 +58,8 @@ public class ImageProcessor
         return grayImage;
     }
 
-    public static Image adjustContrast(Image originalImage, double contrast) {
+    public static Image adjustContrast(Image originalImage, double contrast) 
+    {
 
         int width = (int) originalImage.getWidth();
         int height = (int) originalImage.getHeight();
@@ -66,8 +69,10 @@ public class ImageProcessor
         PixelReader pixelReader = originalImage.getPixelReader();
         PixelWriter pixelWriter = outputImage.getPixelWriter();
 
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
+        for (int y = 0; y < height; y++) 
+        {
+            for (int x = 0; x < width; x++) 
+            {
 
                 Color color = pixelReader.getColor(x, y);
 
@@ -86,55 +91,47 @@ public class ImageProcessor
         return outputImage;
     }
 
-    private static double clamp(double value) {
+    private static double clamp(double value) 
+    {
 
-        if (value < 0.0) {
+        if (value < 0.0) 
+        {
             return 0.0;
         }
 
-        if (value > 1.0) {
+        if (value > 1.0) 
+        {
             return 1.0;
         }
 
         return value;
     }
 
-    public static Image addBorder(Image originalImage) {
+    public static Image addBorder(Image originalImage) 
+    {
 
         int borderSize = 20;
 
         int width = (int) originalImage.getWidth();
         int height = (int) originalImage.getHeight();
 
-        WritableImage borderedImage =
-                new WritableImage(
-                        width + borderSize * 2,
-                        height + borderSize * 2
-                );
+        WritableImage borderedImage = new WritableImage(width + borderSize * 2, height + borderSize * 2);
 
         PixelReader reader = originalImage.getPixelReader();
         PixelWriter writer = borderedImage.getPixelWriter();
 
-        for (int y = 0; y < height + borderSize * 2; y++) {
-            for (int x = 0; x < width + borderSize * 2; x++) {
+        for (int y = 0; y < height + borderSize * 2; y++) 
+        {
+            for (int x = 0; x < width + borderSize * 2; x++) 
+            {
 
-                if (
-                        x < borderSize ||
-                                y < borderSize ||
-                                x >= width + borderSize ||
-                                y >= height + borderSize
-                ) {
-
+                if (x < borderSize || y < borderSize || x >= width + borderSize || y >= height + borderSize) 
+                {
                     writer.setColor(x, y, Color.BLACK);
-
-                } else {
-
-                    Color color =
-                            reader.getColor(
-                                    x - borderSize,
-                                    y - borderSize
-                            );
-
+                } 
+                else
+                {
+                    Color color = reader.getColor(x - borderSize, y - borderSize);
                     writer.setColor(x, y, color);
                 }
             }
