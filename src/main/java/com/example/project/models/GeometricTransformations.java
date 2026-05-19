@@ -1,4 +1,4 @@
-package com.example.project.models;
+package com.example;
 
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;
@@ -10,8 +10,12 @@ public class GeometricTransformations
 {
     public static Image scale(Image source, double factor) 
     {
-        int width = (int) (source.getWidth() * factor);
-        int height = (int) (source.getHeight() * factor);
+        // Ensure dimensions are at least 1 pixel to prevent crash on tiny scale factors
+        int width = Math.max(1, (int) (source.getWidth() * factor));
+        int height = Math.max(1, (int) (source.getHeight() * factor));
+        
+        int srcWidth = (int) source.getWidth();
+        int srcHeight = (int) source.getHeight();
         
         WritableImage newImage = new WritableImage(width, height);
         PixelReader reader = source.getPixelReader();
@@ -21,17 +25,23 @@ public class GeometricTransformations
         {
             for (int x = 0; x < width; x++) 
             {
-                // Mapping the new pixel back to the original source coordinates
+                // Backward mapping calculation
                 int srcX = (int) (x / factor);
                 int srcY = (int) (y / factor);
                 
-                if (srcX < source.getWidth() && srcY < source.getHeight()) {
-                    writer.setArgb(x, y, reader.getArgb(srcX, srcY));
-                }
+                // Fix: Use Math.min to force coordinates to stay inside the maximum valid index (size - 1)
+                if (srcX >= srcWidth)  srcX = srcWidth - 1;
+                if (srcY >= srcHeight) srcY = srcHeight - 1;
+                
+                // Double check for negative boundaries just in case factor is erratic
+                if (srcX < 0) srcX = 0;
+                if (srcY < 0) srcY = 0;
+
+                writer.setArgb(x, y, reader.getArgb(srcX, srcY));
             }
         }
         return newImage;
-    }
+    }   
 
     public static Image rotate(Image sourceImage, double angleDegrees) {
         int width = (int) sourceImage.getWidth();
