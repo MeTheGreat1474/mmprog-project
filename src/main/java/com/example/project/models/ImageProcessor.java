@@ -6,7 +6,7 @@ import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 
-public class ImageProcessorTest 
+public class ImageProcessor
 {
 
     public static Image adjustBrightness(Image source, double value) 

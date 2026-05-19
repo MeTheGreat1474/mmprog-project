@@ -20,16 +20,26 @@ import java.net.URI;
 import java.net.URLEncoder;
 
 import com.example.project.models.GeometricTransformations;
-import com.example.project.models.ImageProcessorTest;
+import com.example.project.models.ImageProcessor;
 import com.example.project.models.ObjectSelector;
 
-public class MainApp extends Application {
-
-    private Image originalImage;
+public class MainApp extends Application 
+{
+    private Image originalImage; // The untouched file
+    private Image currentImage;  // The image after transformations are applied
     private ImageView imageView = new ImageView();
     private Label heartIcon = new Label("♥");
-    private Label statusLabel = new Label("Status: Ready");
+    private Label statusLabel = new Label("System Status: Ready");
     private ProgressBar progressBar = new ProgressBar(0);
+    private Slider brightSlider;
+
+    // Style Constants matching your screenshot
+    private final String BG_DARK = "#0D0D0D";
+    private final String PANEL_DARK = "#1A1A1A";
+    private final String ACCENT_BLUE = "#00A3FF";
+    private final String TEXT_LIGHT = "#FFFFFF";
+    private final String TEXT_MUTED = "#888888";
+    private final String BORDER_COLOR = "#222222";
 
     @Override
     public void start(Stage primaryStage) 
@@ -37,235 +47,247 @@ public class MainApp extends Application {
         primaryStage.setTitle("Image Editor");
 
         // Left Sidebar 
-        VBox sideMenu = new VBox(10);
-        sideMenu.setPadding(new Insets(15));
-        sideMenu.setPrefWidth(250);
-        sideMenu.setStyle("-fx-background-color: #f4f4f4; -fx-border-color: #ccc; -fx-border-width: 0 1 0 0;");
+        VBox sideMenu = new VBox(15);
+        sideMenu.setPadding(new Insets(25, 15, 25, 15));
+        sideMenu.setPrefWidth(260);
+        sideMenu.setStyle("-fx-background-color: " + BG_DARK + "; -fx-border-color: " + BORDER_COLOR + "; -fx-border-width: 0 1 0 0;");
+
+        // App/Section Title 
+        Label menuTitle = new Label("Image Processing");
+        menuTitle.setStyle("-fx-text-fill: " + TEXT_LIGHT + "; -fx-font-weight: bold; -fx-font-size: 18px;");
 
         // Load Button
         Button loadButton = new Button("Open Image");
         loadButton.setMaxWidth(Double.MAX_VALUE);
+        loadButton.setStyle("-fx-background-color: " + ACCENT_BLUE + "; -fx-text-fill: " + TEXT_LIGHT + "; -fx-font-weight: bold; -fx-background-radius: 6px; -fx-cursor: hand;");
         loadButton.setOnAction(e -> loadFile(primaryStage));
 
         // 2. Geometric Section (Collapsible)
         Button geoToolsButton = new Button("Geometric Tools ▼");
         geoToolsButton.setMaxWidth(Double.MAX_VALUE);
-        VBox geometricBox = new VBox(5);
+        geoToolsButton.setAlignment(Pos.CENTER_LEFT);
+        geoToolsButton.setStyle("-fx-background-color: transparent; -fx-text-fill: " + TEXT_LIGHT + "; -fx-font-weight: bold; -fx-padding: 8 0 8 0; -fx-cursor: hand;");
+        
+        VBox geometricBox = new VBox(12);
         geometricBox.setVisible(false);
         geometricBox.setManaged(false);
-        geometricBox.setPadding(new Insets(5, 0, 10, 20));
+        geometricBox.setPadding(new Insets(0, 0, 10, 15));
 
-        Button grayscaleBtn = new Button("Grayscale");
-        grayscaleBtn.setOnAction(e -> {
-            if (originalImage != null) {
-                Image grayImage = ImageProcessorTest.convertToGrayscale(originalImage);
-                imageView.setImage(grayImage);
-            }
-        });
+        Label lblScale = new Label("Choose Scale Factor:");
+        lblScale.setStyle("-fx-text-fill: " + TEXT_MUTED + "; -fx-font-size: 11px;");
+        
+        ComboBox<Double> scaleOptions = new ComboBox<>();
+        scaleOptions.getItems().addAll(0.5, 1.0, 1.5, 2.0, 3.0, 5.0);
+        scaleOptions.setValue(1.0); // Default value
+        scaleOptions.setMaxWidth(Double.MAX_VALUE);
+        scaleOptions.setStyle("-fx-background-color: #262626; -fx-text-fill: white; -fx-mark-color: white;");
 
-        Button borderBtn = new Button("Add Border");
-        borderBtn.setOnAction(e -> {
+        Button btnApplyScale = new Button("Apply Scaling");
+        btnApplyScale.setMaxWidth(Double.MAX_VALUE);
+        btnApplyScale.setStyle("-fx-background-color: " + ACCENT_BLUE + "; -fx-text-fill: " + TEXT_LIGHT + "; -fx-font-weight: bold; -fx-background-radius: 6px; -fx-cursor: hand;");
 
-            if (originalImage != null) {
-
-                Image borderedImage =
-                        ImageProcessorTest.addBorder(originalImage);
-
-                imageView.setImage(borderedImage);
-            }
-        });
-
-        Button emailBtn = new Button("Share via Email");
-        emailBtn.setOnAction(e -> {
-
-            try {
-
-                Desktop.getDesktop().browse(
-                        new URI(
-                                "mailto:?subject=Shared Image&body=Check out this edited image!"
-                        )
-                );
-
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-        });
-
-        Button whatsappBtn = new Button("Share via WhatsApp");
-        whatsappBtn.setOnAction(e -> {
-
-            try {
-
-                String message =
-                        "Check out this edited image!";
-
-                String whatsappURL =
-                        "https://wa.me/?text="
-                                + URLEncoder.encode(message, "UTF-8");
-
-                Desktop.getDesktop().browse(
-                        new URI(whatsappURL)
-                );
-
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-        });
-
-        Button scaleButton = new Button("Scale 2.0x");
-        scaleButton.setOnAction(e -> {
-            if (originalImage != null) {
-                Image scaled = GeometricTransformations.scale(originalImage, 2.0);
-                imageView.setImage(scaled);
+        btnApplyScale.setOnAction(e -> {
+            if (currentImage != null) 
+            {
+                System.out.println("HOHOH");
+                double factor = scaleOptions.getValue();
+                // Use currentImage as the source
+                currentImage = GeometricTransformations.scale(currentImage, factor); 
+                imageView.setImage(currentImage);
+                statusLabel.setText("Status: Scaled. You can now apply other effects.");
             }
         });
 
         // Brightness control
-         VBox radBox = new VBox(5);
-        radBox.setVisible(false); 
-        radBox.setManaged(false);
-        radBox.setPadding(new Insets(5, 0, 10, 20));
-        Slider brightSlider = new Slider(-0.5, 0.5, 0);
+        Label lblBrightness = new Label("Brightness");
+        lblBrightness.setStyle("-fx-text-fill: " + TEXT_MUTED + "; -fx-font-size: 11px;");
+        
+        brightSlider = new Slider(-0.5, 0.5, 0);
+        brightSlider.setStyle("-fx-control-inner-background: #262626;");
         brightSlider.valueProperty().addListener((obs, oldV, newV) -> {
-            if (originalImage != null) {
-                imageView.setImage(ImageProcessorTest.adjustBrightness(originalImage, newV.doubleValue()));
-            }
-        });
-        radBox.getChildren().addAll(new Label("Brightness:"), brightSlider);
-
-        Label contrastLabel = new Label("Contrast");
-
-        Slider contrastSlider = new Slider(0.5, 2.0, 1.0);
-        contrastSlider.setShowTickLabels(true);
-        contrastSlider.setShowTickMarks(true);
-
-        contrastSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-
-            if (originalImage != null) {
-
-                Image contrastImage =
-                        ImageProcessorTest.adjustContrast(
-                                originalImage,
-                                newVal.doubleValue()
-                        );
-
-                imageView.setImage(contrastImage);
+            if (currentImage != null) 
+            {
+                Image preview = ImageProcessor.adjustBrightness(currentImage, newV.doubleValue());
+                imageView.setImage(preview);
             }
         });
 
-        geometricBox.getChildren().addAll(scaleButton, new Separator(), new Label("Brightness"), brightSlider);
+        Button btnCommitBrightness = new Button("Commit Brightness");
+        btnCommitBrightness.setMaxWidth(Double.MAX_VALUE);
+        btnCommitBrightness.setStyle("-fx-background-color: " + ACCENT_BLUE + "; -fx-text-fill: " + TEXT_LIGHT + "; -fx-font-weight: bold; -fx-background-radius: 6px; -fx-cursor: hand;");
+
+        btnCommitBrightness.setOnAction(e -> {
+            if (currentImage != null) 
+            {
+                // This "bakes" the current brightness into the image stack
+                currentImage = ImageProcessor.adjustBrightness(currentImage, brightSlider.getValue());
+                brightSlider.setValue(0); // Reset slider to neutral after committing
+                imageView.setImage(currentImage);
+                statusLabel.setText("Brightness applied to stack.");
+            }
+        });
+
+        geometricBox.getChildren().addAll(lblScale, scaleOptions, btnApplyScale, new Separator(), lblBrightness, brightSlider, btnCommitBrightness);
         geoToolsButton.setOnAction(e -> 
         {
-                toggle(geometricBox);
-    }   );
+            toggle(geometricBox);
+        });
 
         // 3. Extraction Section (Collapsible)
         Button extractionToolsButton = new Button("Object Extraction ▼");
         extractionToolsButton.setMaxWidth(Double.MAX_VALUE);
-        VBox extractionBox = new VBox(10);
+        extractionToolsButton.setAlignment(Pos.CENTER_LEFT);
+        extractionToolsButton.setStyle("-fx-background-color: transparent; -fx-text-fill: " + TEXT_LIGHT + "; -fx-font-weight: bold; -fx-padding: 8 0 8 0; -fx-cursor: hand;");
+        
+        VBox extractionBox = new VBox(12);
         extractionBox.setVisible(false); 
         extractionBox.setManaged(false);
-        extractionBox.setPadding(new Insets(5, 0, 10, 20));
+        extractionBox.setPadding(new Insets(0, 0, 10, 15));
 
         ColorPicker colorPicker = new ColorPicker(Color.BLUE);
+        colorPicker.setMaxWidth(Double.MAX_VALUE);
+        colorPicker.setStyle("-fx-background-color: #262626;");
+        
         Slider threshold = new Slider(0, 1, 0.4);
-        Button extractButton = new Button("Extract & Save");
+        threshold.setStyle("-fx-control-inner-background: #262626;");
+        
+        Button extractButton = new Button("Extract (Preview)");
+        extractButton.setMaxWidth(Double.MAX_VALUE);
+        extractButton.setStyle("-fx-background-color: #1F3D52; -fx-text-fill: #00A3FF; -fx-font-weight: bold; -fx-border-color: #00A3FF; -fx-border-radius: 6px; -fx-background-radius: 6px; -fx-cursor: hand;");
+        
         extractButton.setOnAction(e -> {
-            if (originalImage != null) {
-                Image result = ObjectSelector.extractByColor(originalImage, colorPicker.getValue(), threshold.getValue());
-                imageView.setImage(result);
-                // ObjectSelector.saveExtractedObject(result, "extracted_result.png");
-                statusLabel.setText("Status: Saved extracted_result.png");
+            if (currentImage != null) 
+            {
+                // Live preview only - doesn't change currentImage baseline yet
+                Image preview = ObjectSelector.extractByColor(currentImage, colorPicker.getValue(), threshold.getValue());
+                imageView.setImage(preview);
+                statusLabel.setText("Status: Previewing Color Extraction.");
             }
         });
-        extractionBox.getChildren().addAll(new Label("Target Color:"), colorPicker, new Label("Threshold:"), threshold, extractButton);
+
+        Button btnCommitExtract = new Button("Commit Extract");
+        btnCommitExtract.setMaxWidth(Double.MAX_VALUE);
+        btnCommitExtract.setStyle("-fx-background-color: " + ACCENT_BLUE + "; -fx-text-fill: " + TEXT_LIGHT + "; -fx-font-weight: bold; -fx-background-radius: 6px; -fx-cursor: hand;");
+        
+        btnCommitExtract.setOnAction(e -> {
+            if (currentImage != null) 
+            {
+                // Bakes the extraction results into the image state pipeline
+                currentImage = ObjectSelector.extractByColor(currentImage, colorPicker.getValue(), threshold.getValue());
+                imageView.setImage(currentImage);
+                statusLabel.setText("Status: Extraction applied to stack.");
+            }
+        });
+
+        Label lblColor = new Label("Target Color:");
+        lblColor.setStyle("-fx-text-fill: " + TEXT_MUTED + "; -fx-font-size: 11px;");
+        Label lblThreshold = new Label("Threshold:");
+        lblThreshold.setStyle("-fx-text-fill: " + TEXT_MUTED + "; -fx-font-size: 11px;");
+
+        extractionBox.getChildren().addAll(lblColor, colorPicker, lblThreshold, threshold, extractButton, btnCommitExtract);
         extractionToolsButton.setOnAction(e -> toggle(extractionBox));
 
-        // // 4. Radiometric Section (Collapsible)
-        // Button btnRadHeader = new Button("Radiometric Adjustment ▼");
-        // btnRadHeader.setMaxWidth(Double.MAX_VALUE);
-        // VBox radBox = new VBox(5);
-        // radBox.setVisible(false); 
-        // radBox.setManaged(false);
-        // radBox.setPadding(new Insets(5, 0, 10, 20));
+        // Bottom action buttons inside the Sidebar
+        Button saveButton = new Button("Save Image");
+        saveButton.setMaxWidth(Double.MAX_VALUE);
+        saveButton.setStyle("-fx-background-color: " + ACCENT_BLUE + "; -fx-text-fill: " + TEXT_LIGHT + "; -fx-font-weight: bold; -fx-background-radius: 6px; -fx-cursor: hand;");
+        saveButton.setOnAction(e -> {
+            if (currentImage != null)
+            {
+                // Modification logic from original request to match database save behavior if required:
+                ObjectSelector.extractByColor(currentImage, colorPicker.getValue(), threshold.getValue());
+                ObjectSelector.saveExtractedObject(currentImage, "C:\\Users\\ahmad\\DarkroomLibrary\\extracted_" + System.currentTimeMillis() + ".png");
+                statusLabel.setText("Status: Saved to DarkroomLibrary");
+            }
+        });
 
-        // Slider brightSlider = new Slider(-0.5, 0.5, 0);
-        // brightSlider.valueProperty().addListener((obs, oldV, newV) -> {
-        //     if (originalImage != null) {
-        //         imageView.setImage(ImageProcessorTest.adjustBrightness(originalImage, newV.doubleValue()));
-        //     }
-        // });
-        // radBox.getChildren().addAll(new Label("Brightness:"), brightSlider);
-        // btnRadHeader.setOnAction(e -> toggle(radBox));
+        Button resetButton = new Button("Reset to Original");
+        resetButton.setMaxWidth(Double.MAX_VALUE);
+        resetButton.setStyle("-fx-background-color: #331A1A; -fx-text-fill: #FF5555; -fx-font-weight: bold; -fx-border-color: #552222; -fx-border-radius: 6px; -fx-background-radius: 6px; -fx-cursor: hand;");
+        resetButton.setOnAction(e -> {
+            if (originalImage != null) 
+            {
+                currentImage = originalImage; // Overwrite the stack with the original
+                imageView.setImage(currentImage);
+                brightSlider.setValue(0);
+                statusLabel.setText("Status: All effects cleared.");
+            }
+        });
 
-        sideMenu.getChildren().addAll(loadButton, new Separator(), geoToolsButton, geometricBox, extractionToolsButton, extractionBox);
+        sideMenu.getChildren().addAll(menuTitle, loadButton, new Separator(), geoToolsButton, geometricBox, extractionToolsButton, extractionBox, new Separator(), saveButton, resetButton);
 
-        sideMenu.getChildren().add(grayscaleBtn);
-
-        sideMenu.getChildren().add(borderBtn);
-
-        sideMenu.getChildren().addAll(
-                emailBtn,
-                whatsappBtn
-        );
-
-        // --- Center Display (Requirement 2.1) ---
+        // --- Center Display (Matches Custom Video Output Container Panel) ---
         heartIcon.setTextFill(Color.RED);
         heartIcon.setStyle("-fx-font-size: 40px;");
         heartIcon.setVisible(false);
         
         StackPane centerStack = new StackPane(imageView, heartIcon);
-        centerStack.setStyle("-fx-background-color: #333;");
-        StackPane.setAlignment(heartIcon, Pos.TOP_RIGHT);
-        StackPane.setMargin(heartIcon, new Insets(20));
+        centerStack.setPadding(new Insets(25));
+        centerStack.setStyle("-fx-background-color: " + BG_DARK + ";");
+        
+        // Window Output Frame Container Card Block
+        VBox displayWindowFrame = new VBox(15);
+        displayWindowFrame.setAlignment(Pos.CENTER);
+        displayWindowFrame.setPadding(new Insets(20));
+        displayWindowFrame.setStyle("-fx-background-color: " + PANEL_DARK + "; -fx-background-radius: 10px; -fx-border-color: #2b2b2b; -fx-border-radius: 10px;");
+        
+        Label frameHeader = new Label("Generated Image Output View");
+        frameHeader.setStyle("-fx-text-fill: " + TEXT_LIGHT + "; -fx-font-size: 15px; -fx-font-weight: bold;");
+        
         imageView.setPreserveRatio(true);
-        imageView.fitWidthProperty().bind(centerStack.widthProperty().multiply(0.8));
+        imageView.fitWidthProperty().bind(primaryStage.widthProperty().multiply(0.55));
+        
+        displayWindowFrame.getChildren().addAll(frameHeader, centerStack);
+        
+        // Wrapper box to give clean margin contrast in Center
+        StackPane centerWrapper = new StackPane(displayWindowFrame);
+        centerWrapper.setPadding(new Insets(30));
+        centerWrapper.setStyle("-fx-background-color: " + BG_DARK + ";");
 
-        // --- Bottom Status Bar ---
-        HBox bottom = new HBox(15, statusLabel, progressBar);
-        bottom.setPadding(new Insets(10));
-        bottom.setStyle("-fx-background-color: #ddd;");
+        // --- Bottom Media Style Status Bar ---
+        HBox bottom = new HBox(15, statusLabel);
+        bottom.setPadding(new Insets(12, 20, 12, 20));
+        bottom.setStyle("-fx-background-color: " + PANEL_DARK + "; -fx-border-color: " + BORDER_COLOR + "; -fx-border-width: 1 0 0 0;");
+        statusLabel.setStyle("-fx-text-fill: " + TEXT_MUTED + "; -fx-font-family: 'monospace';");
 
         BorderPane root = new BorderPane();
         root.setLeft(sideMenu);
-        root.setCenter(centerStack);
+        root.setCenter(centerWrapper);
         root.setBottom(bottom);
 
-        primaryStage.setScene(new Scene(root, 1100, 750));
+        primaryStage.setScene(new Scene(root, 1150, 760));
         primaryStage.show();
     }
 
-    private void loadFile(Stage stage) {
+    public void loadFile(Stage stage) 
+    {
         FileChooser fc = new FileChooser();
         File file = fc.showOpenDialog(stage);
-        if (file != null) {
+        if (file != null) 
+        {
             originalImage = new Image(file.toURI().toString());
-            imageView.setImage(originalImage);
-            statusLabel.setText("Loaded: " + file.getName());
-            // Show Heart as an example of Metadata indicator
-            heartIcon.setVisible(true); 
+            currentImage = originalImage;
+            imageView.setImage(currentImage);
+            if(brightSlider != null) {
+                brightSlider.setValue(0);
+            }
+            statusLabel.setText("Status: Loaded " + file.getName());
+            heartIcon.setVisible(false); 
         }
     }
 
-    public void loadExternalImage(String filePath) {
-        File file = new File(filePath);
-        if (file.exists()) {
-            originalImage = new Image(file.toURI().toString());
-            imageView.setImage(originalImage);
-            statusLabel.setText("Loaded: " + file.getName());
-            heartIcon.setVisible(true); 
-        }
-    }
-
-    private void toggle(VBox box) {
+    private void toggle(VBox box) 
+    {
         boolean v = box.isVisible();
         box.setVisible(!v);
         box.setManaged(!v);
     }
 
-    public static void main(String[] args) { launch(args); }
+    public static void main(String[] args) 
+    { 
+        launch(args); 
+    }
 }
-
 // import javafx.application.Application;
 // import javafx.geometry.Insets;
 // import javafx.geometry.Pos;

@@ -220,7 +220,7 @@ public class DashboardController implements Initializable {
                         Stage editorStage = new Stage();
                         com.Thierry.MainApp editorApp = new com.Thierry.MainApp();
                         editorApp.start(editorStage);
-                        editorApp.loadExternalImage(currentActiveFile);
+                        editorApp.loadFile(editorStage);
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
