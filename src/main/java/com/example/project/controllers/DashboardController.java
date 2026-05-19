@@ -253,7 +253,7 @@ public class DashboardController implements Initializable {
             generateVideoBtn.setOnAction(e -> {
                 try {
                     javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(com.example.project.MainApplication.class.getResource("views/video-view.fxml"));
-                    javafx.scene.Scene scene = new javafx.scene.Scene(loader.load(), 1280, 800);
+                    javafx.scene.Scene scene = new javafx.scene.Scene(loader.load(), 1620, 800);
                     com.example.project.controllers.VideoController controller = loader.getController();
                     
                     Stage videoStage = new Stage();
