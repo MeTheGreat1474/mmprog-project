@@ -2,14 +2,22 @@ package com.Thierry;
 
 import javafx.application.Application;
 import javafx.geometry.*;
+import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.image.*;
+import javafx.scene.image.Image;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+
+import java.awt.*;
 import java.io.File;
+import java.net.URI;
+import java.net.URLEncoder;
 
 import com.example.project.models.GeometricTransformations;
 import com.example.project.models.ImageProcessorTest;
@@ -46,7 +54,64 @@ public class MainApp extends Application {
         geometricBox.setVisible(false);
         geometricBox.setManaged(false);
         geometricBox.setPadding(new Insets(5, 0, 10, 20));
-        
+
+        Button grayscaleBtn = new Button("Grayscale");
+        grayscaleBtn.setOnAction(e -> {
+            if (originalImage != null) {
+                Image grayImage = ImageProcessorTest.convertToGrayscale(originalImage);
+                imageView.setImage(grayImage);
+            }
+        });
+
+        Button borderBtn = new Button("Add Border");
+        borderBtn.setOnAction(e -> {
+
+            if (originalImage != null) {
+
+                Image borderedImage =
+                        ImageProcessorTest.addBorder(originalImage);
+
+                imageView.setImage(borderedImage);
+            }
+        });
+
+        Button emailBtn = new Button("Share via Email");
+        emailBtn.setOnAction(e -> {
+
+            try {
+
+                Desktop.getDesktop().browse(
+                        new URI(
+                                "mailto:?subject=Shared Image&body=Check out this edited image!"
+                        )
+                );
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
+        Button whatsappBtn = new Button("Share via WhatsApp");
+        whatsappBtn.setOnAction(e -> {
+
+            try {
+
+                String message =
+                        "Check out this edited image!";
+
+                String whatsappURL =
+                        "https://wa.me/?text="
+                                + URLEncoder.encode(message, "UTF-8");
+
+                Desktop.getDesktop().browse(
+                        new URI(whatsappURL)
+                );
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+
         Button scaleButton = new Button("Scale 2.0x");
         scaleButton.setOnAction(e -> {
             if (originalImage != null) {
@@ -67,6 +132,26 @@ public class MainApp extends Application {
             }
         });
         radBox.getChildren().addAll(new Label("Brightness:"), brightSlider);
+
+        Label contrastLabel = new Label("Contrast");
+
+        Slider contrastSlider = new Slider(0.5, 2.0, 1.0);
+        contrastSlider.setShowTickLabels(true);
+        contrastSlider.setShowTickMarks(true);
+
+        contrastSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
+
+            if (originalImage != null) {
+
+                Image contrastImage =
+                        ImageProcessorTest.adjustContrast(
+                                originalImage,
+                                newVal.doubleValue()
+                        );
+
+                imageView.setImage(contrastImage);
+            }
+        });
 
         geometricBox.getChildren().addAll(scaleButton, new Separator(), new Label("Brightness"), brightSlider);
         geoToolsButton.setOnAction(e -> 
@@ -114,6 +199,15 @@ public class MainApp extends Application {
         // btnRadHeader.setOnAction(e -> toggle(radBox));
 
         sideMenu.getChildren().addAll(loadButton, new Separator(), geoToolsButton, geometricBox, extractionToolsButton, extractionBox);
+
+        sideMenu.getChildren().add(grayscaleBtn);
+
+        sideMenu.getChildren().add(borderBtn);
+
+        sideMenu.getChildren().addAll(
+                emailBtn,
+                whatsappBtn
+        );
 
         // --- Center Display (Requirement 2.1) ---
         heartIcon.setTextFill(Color.RED);
