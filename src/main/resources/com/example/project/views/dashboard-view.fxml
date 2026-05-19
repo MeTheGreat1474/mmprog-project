@@ -32,19 +32,19 @@
             <!-- Primary Navigation Links -->
             <VBox spacing="8">
                 <Button text="REPOSITORY" styleClass="nav-button, nav-button-active" alignment="BASELINE_LEFT" maxWidth="Infinity"/>
-                <Button text="PROCESSING" styleClass="nav-button" alignment="BASELINE_LEFT" maxWidth="Infinity"/>
+                <!-- <Button text="PROCESSING" styleClass="nav-button" alignment="BASELINE_LEFT" maxWidth="Infinity"/>
                 <Button text="MOSAIC" styleClass="nav-button" alignment="BASELINE_LEFT" maxWidth="Infinity"/>
                 <Button text="VIDEO" styleClass="nav-button" alignment="BASELINE_LEFT" maxWidth="Infinity"/>
-                <Button text="SOCIAL" styleClass="nav-button" alignment="BASELINE_LEFT" maxWidth="Infinity"/>
+                <Button text="SOCIAL" styleClass="nav-button" alignment="BASELINE_LEFT" maxWidth="Infinity"/> -->
             </VBox>
             
             <Region VBox.vgrow="ALWAYS" /> <!-- Auto expansion spacer pushing elements to bottom -->
             
             <!-- Secondary Navigation Links -->
-            <VBox spacing="8">
+            <!-- <VBox spacing="8">
                 <Button text="STORAGE" styleClass="nav-button-secondary" alignment="BASELINE_LEFT" maxWidth="Infinity"/>
                 <Button text="TRASH" styleClass="nav-button-secondary" alignment="BASELINE_LEFT" maxWidth="Infinity"/>
-            </VBox>
+            </VBox> -->
         </VBox>
     </left>
     
@@ -63,12 +63,12 @@
                     
                     <!-- Search Bar Container (Dynamic width = Library Width) -->
                     <HBox alignment="CENTER" HBox.hgrow="ALWAYS">
-                        <TextField promptText="Search repository..." styleClass="search-field" prefWidth="400"/>
+                        <!-- <TextField promptText="Search repository..." styleClass="search-field" prefWidth="400"/> -->
                     </HBox>
                     
                     <!-- Top Right Actions Container (Dynamically bound) -->
                     <HBox alignment="CENTER_RIGHT" spacing="15" fx:id="topRightActions" minWidth="0">
-                        <Label text="⚙" styleClass="icon-label"/>
+                        <!-- <Label text="⚙" styleClass="icon-label"/> -->
                         <Button fx:id="generateVideoBtn" text="Generate Video" styleClass="btn-primary"/>
                     </HBox>
                 </HBox>
