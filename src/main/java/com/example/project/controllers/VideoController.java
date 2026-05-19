@@ -4,8 +4,6 @@ import com.example.project.models.VideoService;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.layout.VBox;
-import javafx.scene.layout.HBox;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
@@ -26,7 +24,7 @@ public class VideoController {
     @FXML private Slider seekSlider;
     @FXML private Label currentTimeLabel;
     @FXML private Label totalTimeLabel;
-    @FXML private HBox playerControls;
+    @FXML private Button playPauseButton;
 
     private final VideoService videoService = new VideoService();
     private File selectedFolder;
@@ -207,40 +205,62 @@ public class VideoController {
     }
 
     @FXML
-    private void handlePlay() {
+    private void handlePlayPause() {
 
-        if (mediaPlayer != null) {
+        if (mediaPlayer == null) {
+            return;
+        }
+
+        MediaPlayer.Status status =
+                mediaPlayer.getStatus();
+
+        if (status == MediaPlayer.Status.PLAYING) {
+
+            mediaPlayer.pause();
+
+            playPauseButton.setText("▶");
+
+        } else {
+
             mediaPlayer.play();
+
+            playPauseButton.setText("⏸");
         }
     }
 
     @FXML
-    private void handlePause() {
+    private void handleSeekForward() {
 
-        if (mediaPlayer != null) {
-            mediaPlayer.pause();
+        if (mediaPlayer == null) {
+            return;
         }
+
+        mediaPlayer.seek(
+                mediaPlayer.getCurrentTime()
+                        .add(Duration.seconds(5))
+        );
+    }
+
+    @FXML
+    private void handleSeekBackward() {
+
+        if (mediaPlayer == null) {
+            return;
+        }
+
+        mediaPlayer.seek(
+                mediaPlayer.getCurrentTime()
+                        .subtract(Duration.seconds(5))
+        );
     }
 
     @FXML
     private void handleStop() {
 
         if (mediaPlayer != null) {
-
             mediaPlayer.stop();
-
             seekSlider.setValue(0);
-        }
-    }
-
-    @FXML
-    private void handleRestart() {
-
-        if (mediaPlayer != null) {
-
-            mediaPlayer.seek(Duration.ZERO);
-
-            mediaPlayer.play();
+            playPauseButton.setText("▶");
         }
     }
 
