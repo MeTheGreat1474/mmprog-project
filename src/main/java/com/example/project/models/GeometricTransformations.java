@@ -1,6 +1,7 @@
 package com.example.project.models;
 
 import javafx.scene.image.Image;
+import javafx.scene.image.PixelFormat;
 import javafx.scene.image.PixelReader;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
@@ -42,6 +43,58 @@ public class GeometricTransformations
         }
         return newImage;
     }   
+
+    public static Image flipHorizontal(Image source) {
+        int width = (int) source.getWidth();
+        int height = (int) source.getHeight();
+        
+        WritableImage newImage = new WritableImage(width, height);
+        PixelReader reader = source.getPixelReader();
+        PixelWriter writer = newImage.getPixelWriter();
+
+        int[] pixels = new int[width * height];
+        reader.getPixels(0, 0, width, height, PixelFormat.getIntArgbInstance(), pixels, 0, width);
+
+        int[] flippedPixels = new int[width * height];
+
+        for (int y = 0; y < height; y++) {
+            int rowOffset = y * width;
+            for (int x = 0; x < width; x++) {
+                // Mirror the X coordinate: width - 1 - x
+                flippedPixels[rowOffset + (width - 1 - x)] = pixels[rowOffset + x];
+            }
+        }
+
+        writer.setPixels(0, 0, width, height, PixelFormat.getIntArgbInstance(), flippedPixels, 0, width);
+        return newImage;
+    }
+
+    public static Image flipVertical(Image source) {
+        int width = (int) source.getWidth();
+        int height = (int) source.getHeight();
+        
+        WritableImage newImage = new WritableImage(width, height);
+        PixelReader reader = source.getPixelReader();
+        PixelWriter writer = newImage.getPixelWriter();
+
+        int[] pixels = new int[width * height];
+        reader.getPixels(0, 0, width, height, PixelFormat.getIntArgbInstance(), pixels, 0, width);
+
+        int[] flippedPixels = new int[width * height];
+
+        for (int y = 0; y < height; y++) {
+            int srcRowOffset = y * width;
+            // Mirror the Y coordinate: height - 1 - y
+            int dstRowOffset = (height - 1 - y) * width;
+            
+            // Copy the entire row directly to its mirrored row position
+            System.arraycopy(pixels, srcRowOffset, flippedPixels, dstRowOffset, width);
+        }
+
+        writer.setPixels(0, 0, width, height, PixelFormat.getIntArgbInstance(), flippedPixels, 0, width);
+        return newImage;
+    }
+
 
     public static Image rotate(Image sourceImage, double angleDegrees) {
         int width = (int) sourceImage.getWidth();

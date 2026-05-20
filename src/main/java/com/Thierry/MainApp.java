@@ -34,6 +34,7 @@ public class MainApp extends Application
 
     private Slider brightSlider;
     private Slider rotateSlider;
+    private Slider contrastSlider;
     private TextField textAngle;
 
     private boolean isGrayscalePreviewActive = false;
@@ -321,13 +322,83 @@ public class MainApp extends Application
             }
         });
 
-        geometricBox.getChildren().addAll(lblScale, scaleOptions, btnApplyScale, new Separator(), rotateLabel, rotateInputContainer, commitRotateButton);
+        // --- Contrast Block ---
+        Label contrastLabel = new Label("Contrast");
+        contrastLabel.setStyle("-fx-text-fill: " + TEXT_MUTED + "; -fx-font-size: 11px;");
+
+        contrastSlider = new Slider(0.5, 2.0, 1.0);
+        contrastSlider.setShowTickLabels(true);
+        contrastSlider.setShowTickMarks(true);
+        contrastSlider.setStyle("-fx-control-inner-background: #262626;");
+        
+        contrastSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (currentImage != null) {
+                // Reset active button previews to avoid layer blending issues
+                isGrayscalePreviewActive = false;
+                isBorderPreviewActive = false;
+                
+                // Live preview generated off the active working image state
+                Image contrastPreview = ImageProcessor.adjustContrast(currentImage, newVal.doubleValue());
+                imageView.setImage(contrastPreview);
+            }
+        });
+
+        Button commitContrastButton = new Button("Commit Contrast");
+        commitContrastButton.setMaxWidth(Double.MAX_VALUE);
+        commitContrastButton.setStyle("-fx-background-color: " + ACCENT_BLUE + "; -fx-text-fill: " + TEXT_LIGHT + "; -fx-font-weight: bold; -fx-background-radius: 6px; -fx-cursor: hand;");
+        commitContrastButton.setOnAction(e -> {
+            if (currentImage != null) {
+                // Permanently bake the contrast transformation into the image stack
+                currentImage = ImageProcessor.adjustContrast(currentImage, contrastSlider.getValue());
+                contrastSlider.setValue(1.0); // Reset slider back to the neutral 1.0 center point
+                imageView.setImage(currentImage);
+                statusLabel.setText("Status: Contrast changes applied to stack.");
+            }
+        });
+
+
+        Label lblFlip = new Label("Mirror Adjustments");
+        lblFlip.setStyle("-fx-text-fill: " + TEXT_MUTED + "; -fx-font-size: 11px;");
+
+        HBox flipButtonContainer = new HBox(10);
+        flipButtonContainer.setAlignment(Pos.CENTER);
+
+        Button btnFlipHorizontal = new Button("Flip Horizontal ⇄");
+        btnFlipHorizontal.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(btnFlipHorizontal, Priority.ALWAYS);
+        btnFlipHorizontal.setStyle("-fx-background-color: " + ACCENT_BLUE + "; -fx-text-fill: " + TEXT_LIGHT + "; -fx-font-weight: bold; -fx-background-radius: 6px; -fx-cursor: hand;");
+        btnFlipHorizontal.setOnAction(e -> {
+            if (currentImage != null) {
+                // Instantly flip and bake into current baseline stack
+                currentImage = GeometricTransformations.flipHorizontal(currentImage);
+                imageView.setImage(currentImage);
+                statusLabel.setText("Status: Flipped image horizontally.");
+            }
+        });
+
+        Button btnFlipVertical = new Button("Flip Vertical ⇅");
+        btnFlipVertical.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(btnFlipVertical, Priority.ALWAYS);
+        btnFlipVertical.setStyle("-fx-background-color: " + ACCENT_BLUE + "; -fx-text-fill: " + TEXT_LIGHT + "; -fx-font-weight: bold; -fx-background-radius: 6px; -fx-cursor: hand;");
+        btnFlipVertical.setOnAction(e -> {
+            if (currentImage != null) {
+                // Instantly flip and bake into current baseline stack
+                currentImage = GeometricTransformations.flipVertical(currentImage);
+                imageView.setImage(currentImage);
+                statusLabel.setText("Status: Flipped image vertically.");
+            }
+        });
+
+        //asdasfasfasfasfasf
+        flipButtonContainer.getChildren().addAll(btnFlipHorizontal, btnFlipVertical);
+
+        geometricBox.getChildren().addAll(lblScale, scaleOptions, btnApplyScale, new Separator(), rotateLabel, rotateInputContainer, flipButtonContainer, commitRotateButton);
         geoToolsButton.setOnAction(e -> 
         {
             toggle(geometricBox);
         });
 
-        radiometricBox.getChildren().addAll(lblBrightness, brightSlider, btnCommitBrightness, new Separator(), grayscaleButton, commitGrayscaleButton, new Separator(), borderButton, commitBorderButton);
+        radiometricBox.getChildren().addAll(lblBrightness, brightSlider, btnCommitBrightness, new Separator(), contrastLabel, contrastSlider, commitContrastButton, new Separator(), grayscaleButton, commitGrayscaleButton, new Separator(), borderButton, commitBorderButton);
         radiometricToolsButton.setOnAction(e -> {
             toggle(radiometricBox);
         });
@@ -417,6 +488,11 @@ public class MainApp extends Application
                     textAngle.setText("0");
                 }
 
+                // --- Add this line for the contrast slider ---
+                if (contrastSlider != null) {
+                    contrastSlider.setValue(1.0);
+                }
+
                 statusLabel.setText("Status: All effects cleared.");
             }
         });
@@ -455,7 +531,9 @@ public class MainApp extends Application
         frameHeader.setStyle("-fx-text-fill: " + TEXT_LIGHT + "; -fx-font-size: 15px; -fx-font-weight: bold;");
         
         imageView.setPreserveRatio(true);
-        imageView.fitWidthProperty().bind(primaryStage.widthProperty().multiply(0.55));
+        // imageView.fitWidthProperty().bind(primaryStage.widthProperty().multiply(0.55));
+        imageView.fitHeightProperty().bind(primaryStage.heightProperty().subtract(180));
+        imageView.fitWidthProperty().bind(primaryStage.widthProperty().subtract(360));
         
         displayWindowFrame.getChildren().addAll(frameHeader, centerStack);
         
@@ -498,6 +576,13 @@ public class MainApp extends Application
                 rotateSlider.setValue(0);
                 textAngle.setText("0");
             }
+
+            // --- Add this line for the contrast slider ---
+            if (contrastSlider != null) 
+            {
+                contrastSlider.setValue(1.0);
+            }
+
             statusLabel.setText("Status: Loaded " + file.getName());
             heartIcon.setVisible(false); 
         }
