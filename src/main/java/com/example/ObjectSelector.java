@@ -6,9 +6,10 @@ import javafx.embed.swing.SwingFXUtils;
 import javax.imageio.ImageIO;
 import java.io.File;
 
-public class ObjectSelector {
-
-    public static Image extractByColor(Image sourceImage, Color targetColor, double threshold) {
+public class ObjectSelector 
+{
+    public static Image extractByColor(Image sourceImage, Color targetColor, double threshold) 
+    {
         int width = (int) sourceImage.getWidth();
         int height = (int) sourceImage.getHeight();
         WritableImage resultImage = new WritableImage(width, height);
@@ -23,8 +24,10 @@ public class ObjectSelector {
         // Soft blend width boundary: makes edges smooth instead of sharp/pixelated
         double featherZone = 0.12; 
 
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
+        for (int y = 0; y < height; y++) 
+        {
+            for (int x = 0; x < width; x++) 
+            {
                 Color pixelColor = reader.getColor(x, y);
                 
                 // 2. Convert current pixel to HSV channels
@@ -34,7 +37,8 @@ public class ObjectSelector {
 
                 // 3. Handle the 360-degree cylindrical wrap-around of the Hue wheel
                 double hueDiff = Math.abs(currentHue - targetHue);
-                if (hueDiff > 180.0) {
+                if (hueDiff > 180.0) 
+                {
                     hueDiff = 360.0 - hueDiff;
                 }
                 double normalizedHueDiff = hueDiff / 180.0; // Map to 0.0 - 1.0 range
@@ -46,11 +50,13 @@ public class ObjectSelector {
                 double calculatedDistance = (normalizedHueDiff * 0.65) + (satDiff * 0.20) + (valDiff * 0.15);
 
                 // 5. Apply Soft Feathering segmentation boundary checks
-                if (calculatedDistance <= threshold) {
+                if (calculatedDistance <= threshold) 
+                {
                     // Crisp, highly matching interior pixel remains untouched
                     writer.setColor(x, y, pixelColor);
                 } 
-                else if (calculatedDistance < (threshold + featherZone)) {
+                else if (calculatedDistance < (threshold + featherZone)) 
+                {
                     // Anti-aliasing edge blend: calculate a smooth alpha transition gradient
                     double alpha = 1.0 - ((calculatedDistance - threshold) / featherZone);
                     
@@ -58,15 +64,11 @@ public class ObjectSelector {
                     alpha = Math.max(0.0, Math.min(1.0, alpha));
                     
                     // Create a feathered variant keeping its native RGB properties intact
-                    Color featheredColor = new Color(
-                        pixelColor.getRed(), 
-                        pixelColor.getGreen(), 
-                        pixelColor.getBlue(), 
-                        alpha * pixelColor.getOpacity()
-                    );
+                    Color featheredColor = new Color(pixelColor.getRed(), pixelColor.getGreen(), pixelColor.getBlue(), alpha * pixelColor.getOpacity());
                     writer.setColor(x, y, featheredColor);
                 } 
-                else {
+                else 
+                {
                     // Definite background space rendered completely transparent
                     writer.setColor(x, y, Color.TRANSPARENT);
                 }
@@ -75,11 +77,14 @@ public class ObjectSelector {
         return resultImage;
     }
 
-    public static void saveExtractedObject(Image img, String name) {
-        try { 
+    public static void saveExtractedObject(Image img, String name) 
+    {
+        try 
+        { 
             ImageIO.write(SwingFXUtils.fromFXImage(img, null), "png", new File(name)); 
         }
-        catch (Exception e) { 
+        catch (Exception e) 
+        { 
             e.printStackTrace(); 
         }
     }
