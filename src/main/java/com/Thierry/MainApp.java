@@ -1,4 +1,4 @@
-package com.example;
+package com.Thierry;
 
 import javafx.application.Application;
 import javafx.geometry.*;
@@ -17,6 +17,11 @@ import java.awt.Desktop;
 import java.io.File;
 import java.net.URI;
 import java.net.URLEncoder;
+
+import com.example.project.models.GeometricTransformations;
+import com.example.project.models.ImageProcessor;
+import com.example.project.models.ObjectSelector;
+
 
 public class MainApp extends Application 
 {
@@ -483,7 +488,7 @@ public class MainApp extends Application
             originalImage = new Image(file.toURI().toString());
             currentImage = originalImage;
             imageView.setImage(currentImage);
-            // RESET BOTH SLIDERS FOR THE NEW IMAGE
+            // RESET BOTH SLIDERS FOR THE NEW IMAGEs
             if (brightSlider != null) 
             {
                 brightSlider.setValue(0);
@@ -495,6 +500,25 @@ public class MainApp extends Application
             }
             statusLabel.setText("Status: Loaded " + file.getName());
             heartIcon.setVisible(false); 
+        }
+    }
+
+    public void loadExternalTargetImage(String filePath) {
+        File file = new File(filePath);
+        if (file.exists()) {
+            originalImage = new Image(file.toURI().toString());
+            currentImage = originalImage;
+            imageView.setImage(currentImage);
+            // RESET BOTH SLIDERS FOR THE NEW IMAGE
+            if (brightSlider != null) {
+                brightSlider.setValue(0);
+            }
+            if (rotateSlider != null) {
+                rotateSlider.setValue(0);
+                textAngle.setText("0");
+            }
+            statusLabel.setText("Status: Loaded " + file.getName());
+            heartIcon.setVisible(false);
         }
     }
 

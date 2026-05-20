@@ -1,4 +1,4 @@
-package com.example;
+package com.example.project.models;
 
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;
@@ -10,7 +10,7 @@ public class GeometricTransformations
 {
     public static Image scale(Image source, double factor) 
     {
-        // Ensure dimensions are at least 1 pixel to prevent crash on tiny scale factors
+        // Ensure dimensions are at least 1 pixel to prevent crash on tiny scale factorss
         int width = Math.max(1, (int) (source.getWidth() * factor));
         int height = Math.max(1, (int) (source.getHeight() * factor));
         
